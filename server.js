@@ -2,7 +2,7 @@ import http from "node:http";
 import { readFile } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
-import { convertNovelToScreenplay } from "./src/converter.js";
+import { convertNovelToScreenplayOptionalAI, getPublicAIConfig } from "./src/ai-adapter.js";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const publicDir = join(__dirname, "public");
@@ -36,7 +36,7 @@ async function handleConvert(req, res) {
   try {
     const raw = await readRequestBody(req);
     const payload = raw ? JSON.parse(raw) : {};
-    const result = convertNovelToScreenplay(payload);
+    const result = await convertNovelToScreenplayOptionalAI(payload);
     sendJson(res, 200, result);
   } catch (error) {
     sendJson(res, 400, {
@@ -44,6 +44,13 @@ async function handleConvert(req, res) {
       error: error instanceof Error ? error.message : "转换失败"
     });
   }
+}
+
+function handleConfig(_req, res) {
+  sendJson(res, 200, {
+    ok: true,
+    ai: getPublicAIConfig()
+  });
 }
 
 async function serveStatic(req, res) {
@@ -73,6 +80,11 @@ async function serveStatic(req, res) {
 const server = http.createServer(async (req, res) => {
   if (req.method === "POST" && req.url === "/api/convert") {
     await handleConvert(req, res);
+    return;
+  }
+
+  if (req.method === "GET" && req.url === "/api/config") {
+    handleConfig(req, res);
     return;
   }
 

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { convertNovelToScreenplay, splitChapters } from "../src/converter.js";
+import { convertNovelToScreenplayOptionalAI, getPublicAIConfig } from "../src/ai-adapter.js";
 
 const cases = [
   {
@@ -68,5 +69,35 @@ const shortResult = convertNovelToScreenplay({
 assert.equal(shortResult.stats.chapters, 1);
 assert.ok(shortResult.warnings.some((warning) => warning.includes("少于 3")));
 assert.equal(shortResult.quality.status, "needs_fix");
+
+const fallbackResult = await convertNovelToScreenplayOptionalAI(
+  {
+    title: "AI fallback",
+    engine: "ai",
+    text: cases[0].text,
+    characters: "林青"
+  },
+  {
+    env: {}
+  }
+);
+
+assert.equal(fallbackResult.ok, true);
+assert.equal(fallbackResult.meta.engine, "rules");
+assert.equal(fallbackResult.meta.ai.requested, true);
+assert.equal(fallbackResult.meta.ai.used, false);
+
+const publicConfigWithoutKey = getPublicAIConfig({});
+assert.equal(publicConfigWithoutKey.enabled, false);
+assert.equal(publicConfigWithoutKey.model, "");
+
+const publicConfigWithKey = getPublicAIConfig({
+  OPENAI_API_KEY: "test-key",
+  OPENAI_MODEL: "test-model",
+  OPENAI_BASE_URL: "https://example.com/v1"
+});
+assert.equal(publicConfigWithKey.enabled, true);
+assert.equal(publicConfigWithKey.model, "test-model");
+assert.equal(publicConfigWithKey.provider, "example.com");
 
 console.log("Converter tests passed.");

@@ -33,3 +33,4 @@ if (result.stats.chapters < 3 || result.stats.scenes < 3 || result.stats.beats <
 
 console.log("Smoke check passed.");
 console.log(JSON.stringify(result.stats, null, 2));
+console.log(JSON.stringify(result.meta, null, 2));
