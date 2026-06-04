@@ -6,6 +6,7 @@
   "scripts": {
     "start": "python -m app.server",
     "check": "python scripts/smoke_check.py",
-    "test": "python scripts/converter_tests.py"
+    "test": "python scripts/converter_tests.py",
+    "e2e": "python scripts/e2e_check.py"
   }
 }
