@@ -31,6 +31,7 @@ const engineBox = document.querySelector("#engineBox");
 const convertBtn = document.querySelector("#convertBtn");
 const loadSampleBtn = document.querySelector("#loadSampleBtn");
 const fileInput = document.querySelector("#fileInput");
+const analyzeBtn = document.querySelector("#analyzeBtn");
 const copyBtn = document.querySelector("#copyBtn");
 const downloadBtn = document.querySelector("#downloadBtn");
 const clearBtn = document.querySelector("#clearBtn");
@@ -39,6 +40,11 @@ const qualityScore = document.querySelector("#qualityScore");
 const qualityStatus = document.querySelector("#qualityStatus");
 const qualityMetrics = document.querySelector("#qualityMetrics");
 const qualityChecks = document.querySelector("#qualityChecks");
+const analysisBox = document.querySelector("#analysisBox");
+const analysisStatus = document.querySelector("#analysisStatus");
+const analysisSummary = document.querySelector("#analysisSummary");
+const analysisWarnings = document.querySelector("#analysisWarnings");
+const chapterList = document.querySelector("#chapterList");
 
 let latestYaml = "";
 let appConfig = {
@@ -80,6 +86,74 @@ function setEngineMessage(message = "") {
 
   engineBox.hidden = false;
   engineBox.textContent = message;
+}
+
+function statusLabel(status) {
+  if (status === "ready") return "输入可转换";
+  if (status === "needs_fix") return "需要修正";
+  return "建议复核";
+}
+
+function setAnalysis(analysis) {
+  if (!analysis) {
+    analysisBox.hidden = false;
+    analysisStatus.textContent = "等待分析";
+    analysisSummary.textContent = "";
+    analysisWarnings.textContent = "";
+    analysisWarnings.classList.remove("show");
+    chapterList.textContent = "";
+    return;
+  }
+
+  analysisBox.hidden = false;
+  analysisStatus.textContent = statusLabel(analysis.status);
+  analysisSummary.innerHTML = [
+    ["章节", analysis.summary.chapter_count],
+    ["字数", analysis.summary.chars],
+    ["段落", analysis.summary.paragraphs],
+    ["对白", analysis.summary.dialogues]
+  ]
+    .map(([label, value]) => `<div><span>${label}</span><strong>${value}</strong></div>`)
+    .join("");
+
+  if (analysis.warnings?.length) {
+    analysisWarnings.textContent = analysis.warnings.join(" ");
+    analysisWarnings.classList.add("show");
+  } else {
+    analysisWarnings.textContent = "";
+    analysisWarnings.classList.remove("show");
+  }
+
+  chapterList.innerHTML = analysis.chapters
+    .map((chapter) => `
+      <div class="chapter-row">
+        <div><span>章节</span><strong>${chapter.title}</strong></div>
+        <div><span>字数</span><strong>${chapter.chars}</strong></div>
+        <div><span>段落</span><strong>${chapter.paragraphs}</strong></div>
+        <div><span>对白</span><strong>${chapter.dialogues}</strong></div>
+      </div>`)
+    .join("");
+}
+
+async function analyzeInput() {
+  if (!novelInput.value.trim()) {
+    setAnalysis();
+    return;
+  }
+
+  const response = await fetch("/api/analyze", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      text: novelInput.value,
+      characters: charactersInput.value
+    })
+  });
+  const data = await response.json();
+  if (!data.ok) throw new Error(data.error || "分析失败");
+  setAnalysis(data);
 }
 
 function statusText(status) {
@@ -167,14 +241,20 @@ function inferTitleFromFilename(fileName = "") {
 }
 
 async function importNovelFile(event) {
-  const [file] = event.target.files || [];
-  if (!file) return;
+  const files = [...(event.target.files || [])].sort((left, right) => left.name.localeCompare(right.name, "zh-CN", { numeric: true }));
+  if (!files.length) return;
 
-  const text = await file.text();
-  novelInput.value = text.trim();
-  if (!titleInput.value.trim()) {
-    titleInput.value = inferTitleFromFilename(file.name);
+  const chunks = [];
+  for (const file of files) {
+    const text = (await file.text()).trim();
+    if (!text) continue;
+    chunks.push(files.length > 1 ? `# ${inferTitleFromFilename(file.name)}\n${text}` : text);
   }
+  novelInput.value = chunks.join("\n\n").trim();
+  if (!titleInput.value.trim()) {
+    titleInput.value = files.length === 1 ? inferTitleFromFilename(files[0].name) : "多章节小说改编";
+  }
+  await analyzeInput();
   await convert();
 }
 
@@ -213,6 +293,7 @@ function clearWorkspace() {
   setWarnings([]);
   setQuality();
   setEngineMessage("");
+  setAnalysis();
 }
 
 loadSampleBtn.addEventListener("click", () => {
@@ -225,6 +306,7 @@ loadSampleBtn.addEventListener("click", () => {
 
 convertBtn.addEventListener("click", convert);
 fileInput.addEventListener("change", importNovelFile);
+analyzeBtn.addEventListener("click", analyzeInput);
 copyBtn.addEventListener("click", copyYaml);
 downloadBtn.addEventListener("click", downloadYaml);
 clearBtn.addEventListener("click", clearWorkspace);
@@ -250,4 +332,5 @@ async function loadConfig() {
 
 setStats();
 setQuality();
+setAnalysis();
 loadConfig();

@@ -16,7 +16,7 @@
         <label class="file-button" title="导入 TXT 小说">
           <span aria-hidden="true">⇪</span>
           导入
-          <input id="fileInput" type="file" accept=".txt,.md,text/plain,text/markdown" />
+          <input id="fileInput" type="file" accept=".txt,.md,text/plain,text/markdown" multiple />
         </label>
         <button id="loadSampleBtn" class="secondary" type="button" title="载入示例文本">
           <span aria-hidden="true">↧</span>
@@ -76,6 +76,15 @@
           <span>小说正文</span>
           <textarea id="novelInput" spellcheck="false" placeholder="粘贴 3 个章节以上的小说文本，或点击右上角“导入”读取 TXT/Markdown 文件。支持第一章、Chapter 1、1. 标题等常见章节格式。"></textarea>
         </label>
+        <div id="analysisBox" class="analysis-box">
+          <div class="analysis-head">
+            <strong id="analysisStatus">等待分析</strong>
+            <button id="analyzeBtn" class="secondary compact-button" type="button">分析</button>
+          </div>
+          <div id="analysisSummary" class="analysis-summary"></div>
+          <div id="analysisWarnings" class="analysis-warnings"></div>
+          <div id="chapterList" class="chapter-list"></div>
+        </div>
       </section>
 
       <section class="panel output-panel" aria-label="YAML 输出">

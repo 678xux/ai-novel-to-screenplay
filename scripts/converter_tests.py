@@ -3,6 +3,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from app.analyzer import analyze_novel_input
 from app.ai_adapter import convert_novel_to_screenplay_optional_ai, get_public_ai_config
 from app.converter import convert_novel_to_screenplay, split_chapters
 
@@ -115,5 +116,18 @@ sample_result = convert_novel_to_screenplay(
 )
 assert_true(sample_result["stats"]["characters"] == 3, "fixture sample character count")
 assert_true([character["name"] for character in sample_result["script"]["characters"]] == ["林澈", "沈雾", "周栩"], "fixture sample characters")
+
+sample_analysis = analyze_novel_input({"text": sample_text, "characters": "林澈，沈雾，周栩"})
+assert_true(sample_analysis["summary"]["chapter_count"] == 3, "analysis chapter count")
+assert_true(sample_analysis["summary"]["dialogues"] >= 3, "analysis dialogue count")
+assert_true(sample_analysis["status"] == "ready", "analysis ready")
+
+short_analysis = analyze_novel_input({"text": "第一章 起点\n主角说：“开始。”"})
+assert_true(short_analysis["status"] == "needs_fix", "short analysis status")
+assert_true(any("少于 3" in warning for warning in short_analysis["warnings"]), "short analysis warning")
+
+untitled_analysis = analyze_novel_input({"text": "没有章节标题的正文。\n角色说：“这不够清楚。”"})
+assert_true(untitled_analysis["chapters"][0]["title"] == "未识别章节", "untitled chapter title")
+assert_true(any("未识别到明确章节标题" in warning for warning in untitled_analysis["warnings"]), "untitled warning")
 
 print("Converter tests passed.")

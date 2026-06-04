@@ -6,6 +6,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import unquote, urlparse
 
+from .analyzer import analyze_novel_input
 from .ai_adapter import convert_novel_to_screenplay_optional_ai, get_public_ai_config
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
@@ -31,6 +32,12 @@ class AppHandler(BaseHTTPRequestHandler):
         return json.loads(raw or "{}")
 
     def do_POST(self) -> None:  # noqa: N802 - BaseHTTPRequestHandler API.
+        if self.path == "/api/analyze":
+            try:
+                self.send_json(200, analyze_novel_input(self.read_json()))
+            except Exception as exc:  # noqa: BLE001 - API returns user-facing errors.
+                self.send_json(400, {"ok": False, "error": str(exc) or "分析失败"})
+            return
         if self.path != "/api/convert":
             self.send_error(404)
             return
