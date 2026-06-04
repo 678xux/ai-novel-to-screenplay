@@ -84,6 +84,8 @@ def render_markdown_outline(script: dict[str, Any]) -> str:
                 lines.append(_list_line(f"冲突：{scene['conflict']}"))
             if scene.get("turning_point"):
                 lines.append(_list_line(f"转折：{scene['turning_point']}"))
+            if scene.get("props"):
+                lines.append(_list_line(f"道具/线索：{'、'.join(str(prop) for prop in scene['props'])}"))
             beats = scene.get("beats") or []
             if beats:
                 lines.append(_list_line("节拍："))
