@@ -23,6 +23,9 @@ SCREENPLAY_SCHEMA = {
                 "role": "string",
                 "traits": ["string"],
                 "first_appearance": "string",
+                "goal": "string",
+                "arc": "string",
+                "appearances": ["string"],
             }
         ],
         "acts": [

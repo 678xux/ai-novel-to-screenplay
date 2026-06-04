@@ -161,6 +161,9 @@ sample_result = convert_novel_to_screenplay(
 )
 assert_true(sample_result["stats"]["characters"] == 3, "fixture sample character count")
 assert_true([character["name"] for character in sample_result["script"]["characters"]] == ["林澈", "沈雾", "周栩"], "fixture sample characters")
+assert_true(all(character["goal"] for character in sample_result["script"]["characters"]), "fixture character goals")
+assert_true(all(character["arc"] for character in sample_result["script"]["characters"]), "fixture character arcs")
+assert_true(any(character["appearances"] for character in sample_result["script"]["characters"]), "fixture character appearances")
 assert_true(validate_screenplay_script(sample_result["script"]) == [], "fixture sample schema validation")
 
 broken_script = {

@@ -135,6 +135,9 @@ def extract_characters(chapters: list[dict], user_characters: str = "") -> list[
                 "role": "主角/核心视角" if index == 0 else "角色",
                 "traits": [],
                 "first_appearance": "用户设定",
+                "goal": "待编剧确认",
+                "arc": "从原小说行动中提炼人物变化",
+                "appearances": [],
             }
             for index, name in enumerate(candidates.keys())
         ]
@@ -152,6 +155,9 @@ def extract_characters(chapters: list[dict], user_characters: str = "") -> list[
             "role": "主角/核心视角" if index == 0 else "角色",
             "traits": [],
             "first_appearance": source,
+            "goal": "待编剧确认",
+            "arc": "从原小说行动中提炼人物变化",
+            "appearances": [],
         }
         for index, (name, source) in enumerate(list(candidates.items())[:12])
     ]
@@ -310,6 +316,47 @@ def build_acts(chapters: list[dict], density: str, known_names: list[str]) -> li
     return acts
 
 
+def scene_mentions_character(scene: dict, character_name: str) -> bool:
+    if not character_name:
+        return False
+    if character_name in str(scene.get("summary", "")):
+        return True
+    if character_name in str(scene.get("conflict", "")) or character_name in str(scene.get("turning_point", "")):
+        return True
+    return any(character_name == beat.get("speaker") or character_name in str(beat.get("text", "")) for beat in scene.get("beats", []))
+
+
+def enrich_character_arcs(characters: list[dict], acts: list[dict]) -> list[dict]:
+    for character in characters:
+        appearances = []
+        for act in acts:
+            for scene in act.get("scenes", []):
+                if scene_mentions_character(scene, character.get("name", "")):
+                    appearances.append(scene.get("id", ""))
+
+        if appearances:
+            character["appearances"] = appearances
+            if character.get("first_appearance") == "用户设定":
+                for act in acts:
+                    matched = next((scene for scene in act.get("scenes", []) if scene.get("id") == appearances[0]), None)
+                    if matched:
+                        character["first_appearance"] = matched.get("source_chapter", character["first_appearance"])
+                        break
+        else:
+            character["appearances"] = []
+
+        if character.get("role") == "主角/核心视角":
+            character["goal"] = "追寻核心真相并推动主要选择"
+            character["arc"] = "从被动卷入事件，到主动做出关键选择"
+        elif appearances:
+            character["goal"] = "影响主角选择或推动冲突升级"
+            character["arc"] = "围绕主线冲突呈现立场变化"
+        else:
+            character["goal"] = "待编剧确认"
+            character["arc"] = "待补充人物功能和变化"
+    return characters
+
+
 def yaml_scalar(value: Any) -> str:
     if value is None:
         return "''"
@@ -400,6 +447,7 @@ def convert_novel_to_screenplay(payload: dict | None = None) -> dict:
     known_names = parse_name_list(payload.get("characters", ""))
     characters = extract_characters(chapters, payload.get("characters", ""))
     acts = build_acts(chapters, density, known_names)
+    characters = enrich_character_arcs(characters, acts)
     themes = parse_name_list(payload.get("themes", "")) or ["人物选择", "冲突升级", "情感转折"]
     script = {
         "schema_version": SCRIPT_SCHEMA_VERSION,
