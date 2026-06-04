@@ -6,6 +6,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from app.analyzer import analyze_novel_input
 from app.ai_adapter import convert_novel_to_screenplay_optional_ai, get_public_ai_config
 from app.converter import convert_novel_to_screenplay, split_chapters
+from app.schema import validate_screenplay_script
 
 
 CASES = [
@@ -70,6 +71,11 @@ for item in CASES:
     assert_true("acts:" in result["yaml"], item["name"])
     assert_true(result["quality"]["score"] > 0, item["name"])
     assert_true(result["quality"]["metrics"]["chapter_count"] == item["expected_chapters"], item["name"])
+    assert_true(validate_screenplay_script(result["script"]) == [], f"{item['name']} schema validation")
+    assert_true(
+        any(check["id"] == "schema_contract" and check["passed"] for check in result["quality"]["checks"]),
+        f"{item['name']} quality schema check",
+    )
 
 short_result = convert_novel_to_screenplay({"title": "Short input", "text": "第一章 只有一章\n主角说：“还不够。”"})
 assert_true(short_result["stats"]["chapters"] == 1, "short chapter count")
@@ -116,6 +122,34 @@ sample_result = convert_novel_to_screenplay(
 )
 assert_true(sample_result["stats"]["characters"] == 3, "fixture sample character count")
 assert_true([character["name"] for character in sample_result["script"]["characters"]] == ["林澈", "沈雾", "周栩"], "fixture sample characters")
+assert_true(validate_screenplay_script(sample_result["script"]) == [], "fixture sample schema validation")
+
+broken_script = {
+    **sample_result["script"],
+    "acts": [
+        {
+            **sample_result["script"]["acts"][0],
+            "scenes": [
+                {
+                    **sample_result["script"]["acts"][0]["scenes"][0],
+                    "beats": [
+                        {
+                            **sample_result["script"]["acts"][0]["scenes"][0]["beats"][0],
+                            "type": "inner_monologue",
+                        }
+                    ],
+                }
+            ],
+        }
+    ],
+}
+schema_errors = validate_screenplay_script(broken_script)
+assert_true(bool(schema_errors), "schema catches invalid beat type")
+assert_true("script.acts[0].scenes[0].beats[0].type" in schema_errors[0]["path"], "schema error path")
+
+missing_required = {key: value for key, value in sample_result["script"].items() if key != "production_notes"}
+missing_errors = validate_screenplay_script(missing_required)
+assert_true(any(error["path"] == "script.production_notes" for error in missing_errors), "schema catches missing production notes")
 
 sample_analysis = analyze_novel_input({"text": sample_text, "characters": "林澈，沈雾，周栩"})
 assert_true(sample_analysis["summary"]["chapter_count"] == 3, "analysis chapter count")

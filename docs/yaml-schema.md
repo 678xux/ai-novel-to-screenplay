@@ -33,10 +33,10 @@ script:
 | `title` | string | 是 | 剧本标题。 |
 | `source` | object | 是 | 原小说来源信息。 |
 | `logline` | string | 是 | 一句话故事梗概。 |
-| `themes` | string[] | 否 | 主题关键词。 |
+| `themes` | string[] | 是 | 主题关键词；没有用户输入时由工具提供默认主题。 |
 | `characters` | object[] | 是 | 角色列表。 |
 | `acts` | object[] | 是 | 幕结构；当前版本默认按章节映射为幕。 |
-| `production_notes` | object | 否 | 运行时长、警告和修改建议。 |
+| `production_notes` | object | 是 | 运行时长、警告和修改建议。 |
 
 ## source
 

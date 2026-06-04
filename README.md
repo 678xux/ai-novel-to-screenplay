@@ -12,6 +12,7 @@
 - 输出符合项目定义的 YAML 剧本结构。
 - 提供转换统计、警告提示、复制 YAML、下载 YAML。
 - 提供输入分析面板，转换前可查看章节数、字数、段落数、对白数和格式风险。
+- 提供内置 Schema 校验，质量报告会提示输出是否符合 `docs/yaml-schema.md`。
 - 输入少于 3 章时会明确提示不满足题目要求。
 - 支持可选 AI 增强：未配置 API Key 时使用规则引擎，配置后可让模型在同一 Schema 内优化场景、节拍和对白。
 - 保留 AI 扩展入口，后续可接入大语言模型进行更准确的人物识别、场景拆分和对白改写。
@@ -102,6 +103,7 @@ docs/yaml-schema.md
 当前版本采用“Python 规则引擎 + 可选 AI adapter”的实现方式：
 
 - `app/converter.py` 负责章节切分、对白识别、角色候选提取、场景拆分、节拍生成和 YAML 序列化。
+- `app/schema.py` 负责维护 YAML Schema 常量和可执行校验逻辑。
 - `app/quality.py` 负责结构校验、质量评分和修改建议。
 - `app/ai_adapter.py` 负责可选 AI 增强和失败回退。
 - `app/server.py` 使用 Python 标准库提供静态页面和 API。

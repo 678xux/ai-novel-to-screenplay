@@ -1,3 +1,6 @@
+from .schema import validate_screenplay_script
+
+
 def text_length(text: str = "") -> int:
     return len("".join(str(text).split()))
 
@@ -16,8 +19,18 @@ def validate_screenplay_structure(script: dict) -> list[dict]:
     source = script.get("source") or {}
     acts = script.get("acts") or []
     scenes = [scene for act in acts for scene in act.get("scenes", [])]
+    schema_errors = validate_screenplay_script(script)
 
     checks = [
+        make_check(
+            "schema_contract",
+            "Schema 合规",
+            not schema_errors,
+            "error",
+            "输出必须符合 docs/yaml-schema.md 中定义的 YAML Schema。"
+            if not schema_errors
+            else "；".join(error["message"] for error in schema_errors[:4]),
+        ),
         make_check(
             "schema_version",
             "Schema 版本",
