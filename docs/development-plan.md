@@ -96,6 +96,11 @@
     - 测试：转换结果应通过 Schema 校验，YAML 和 Markdown 大纲应包含篇幅规划字段，浏览器转换后应显示总时长和场均时长。
     - 目的：让作者在打磨对白前先判断初稿篇幅是否适合影视剧、短剧或舞台剧目标媒介。
 
+19. 端到端 API 回归检查
+    - 范围：新增 `scripts/e2e_check.py` 和 `npm run e2e`，自动启动临时本地服务，验证静态首页、输入分析、文本清洗、剧本转换、YAML/JSON/Markdown 导出和错误响应。
+    - 测试：`npm run e2e` 应在不依赖外部服务的情况下完成完整 API 链路验证。
+    - 目的：把手动演示路径固化为可复现质量门禁，提升开发过程可信度。
+
 ## PR 描述模板
 
 ```md
@@ -111,6 +116,7 @@
 ## 测试方式
 - [ ] npm run check
 - [ ] npm test
+- [ ] npm run e2e
 - [ ] 浏览器打开 http://localhost:4173 手动验证
 ```
 
@@ -119,6 +125,7 @@
 ```bash
 npm run check
 npm test
+npm run e2e
 ```
 
 后续接入更复杂 AI 能力后，应增加：

@@ -51,6 +51,12 @@ npm run check
 npm test
 ```
 
+运行端到端 API 检查：
+
+```bash
+npm run e2e
+```
+
 ## 使用方式
 
 1. 输入作品名、主要角色、主题和小说正文，或点击“导入”选择一个或多个 TXT/Markdown 文件。
@@ -118,6 +124,7 @@ docs/yaml-schema.md
 - `app/quality.py` 负责结构校验、质量评分和修改建议。
 - `app/ai_adapter.py` 负责可选 AI 增强和失败回退。
 - `app/server.py` 使用 Python 标准库提供静态页面和 API。
+- `scripts/e2e_check.py` 会启动临时本地服务，并验证静态页面、分析、清洗、转换、导出和错误响应链路。
 - 这样可以保证没有外部 API 的情况下也能稳定演示和复现。
 - AI adapter 会把 Python 规则结果作为初稿，再由模型进行二次润色、合并场景、补充人物弧光和镜头建议。
 
