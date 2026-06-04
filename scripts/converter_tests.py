@@ -5,7 +5,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from app.analyzer import analyze_novel_input
 from app.ai_adapter import convert_novel_to_screenplay_optional_ai, get_public_ai_config
-from app.converter import convert_novel_to_screenplay, split_chapters
+from app.converter import convert_novel_to_screenplay, split_chapters, split_scene_groups
 from app.exporter import export_screenplay, sanitize_filename
 from app.schema import validate_screenplay_script
 
@@ -77,6 +77,43 @@ for item in CASES:
         any(check["id"] == "schema_contract" and check["passed"] for check in result["quality"]["checks"]),
         f"{item['name']} quality schema check",
     )
+
+long_chapter_paragraphs = [
+    "清晨，林青站在码头，看见远处的船灯。",
+    "阿禾低声说：“我们得先找到名单。”",
+    "两人走进街道，雨水忽然变大。",
+    "突然，黑衣人从巷子里冲出来，林青决定离开。",
+    "夜晚，林青抵达医院门外，发现门牌被人换过。",
+    "护士提醒：“别相信办公室里的人。”",
+    "黎明，阿禾回到车站，终于揭开名单背后的秘密。",
+]
+balanced_groups = split_scene_groups(long_chapter_paragraphs, "balanced")
+detailed_groups = split_scene_groups(long_chapter_paragraphs, "detailed")
+compact_groups = split_scene_groups(long_chapter_paragraphs, "compact")
+assert_true(len(detailed_groups) >= len(balanced_groups) >= len(compact_groups), "scene density groups")
+assert_true(len(balanced_groups) >= 2, "balanced scene boundary split")
+
+long_scene_text = """第一章 码头
+清晨，林青站在码头，看见远处的船灯。
+阿禾低声说：“我们得先找到名单。”
+两人走进街道，雨水忽然变大。
+突然，黑衣人从巷子里冲出来，林青决定离开。
+
+第二章 医院
+夜晚，林青抵达医院门外，发现门牌被人换过。
+护士提醒：“别相信办公室里的人。”
+林青穿过走廊，听见办公室里传来争执声。
+下一刻，档案柜突然打开，旧名单掉在地上。
+
+第三章 车站
+黎明，阿禾回到车站，终于揭开名单背后的秘密。
+林青发现父亲留下的符号，决定把名单交出去。
+广播突然响起，危险正在靠近。
+两人离开车站，故事进入新的选择。"""
+long_balanced = convert_novel_to_screenplay({"title": "Long split", "text": long_scene_text, "characters": "林青，阿禾", "density": "balanced"})
+long_compact = convert_novel_to_screenplay({"title": "Long split", "text": long_scene_text, "characters": "林青，阿禾", "density": "compact"})
+assert_true(long_balanced["stats"]["scenes"] > long_balanced["stats"]["chapters"], "long text creates extra scenes")
+assert_true(long_balanced["stats"]["scenes"] >= long_compact["stats"]["scenes"], "density affects integrated scene count")
 
 short_result = convert_novel_to_screenplay({"title": "Short input", "text": "第一章 只有一章\n主角说：“还不够。”"})
 assert_true(short_result["stats"]["chapters"] == 1, "short chapter count")
