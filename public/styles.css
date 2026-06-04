@@ -146,7 +146,7 @@ button.secondary:hover,
 }
 
 .panel-toolbar {
-  grid-template-columns: minmax(180px, 1fr) 120px 120px;
+  grid-template-columns: minmax(160px, 1fr) 110px 110px 120px;
 }
 
 .meta-grid {
@@ -245,7 +245,8 @@ textarea:focus {
   font-size: 20px;
 }
 
-.warning-box {
+.warning-box,
+.engine-box {
   margin: 12px 14px 0;
   border: 1px solid #f2d39a;
   border-radius: 7px;
@@ -254,6 +255,12 @@ textarea:focus {
   color: var(--warn);
   font-size: 13px;
   line-height: 1.6;
+}
+
+.engine-box {
+  border-color: #bddbd5;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
 }
 
 .quality-box {

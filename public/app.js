@@ -21,11 +21,13 @@ const sampleNovel = `第一章 雾港来信
 const titleInput = document.querySelector("#titleInput");
 const modeInput = document.querySelector("#modeInput");
 const densityInput = document.querySelector("#densityInput");
+const engineInput = document.querySelector("#engineInput");
 const charactersInput = document.querySelector("#charactersInput");
 const themesInput = document.querySelector("#themesInput");
 const novelInput = document.querySelector("#novelInput");
 const yamlOutput = document.querySelector("#yamlOutput");
 const warningBox = document.querySelector("#warningBox");
+const engineBox = document.querySelector("#engineBox");
 const convertBtn = document.querySelector("#convertBtn");
 const loadSampleBtn = document.querySelector("#loadSampleBtn");
 const fileInput = document.querySelector("#fileInput");
@@ -39,6 +41,13 @@ const qualityMetrics = document.querySelector("#qualityMetrics");
 const qualityChecks = document.querySelector("#qualityChecks");
 
 let latestYaml = "";
+let appConfig = {
+  ai: {
+    enabled: false,
+    model: "",
+    provider: ""
+  }
+};
 
 titleInput.value = "";
 charactersInput.value = "";
@@ -60,6 +69,17 @@ function setWarnings(warnings = []) {
 
   warningBox.hidden = false;
   warningBox.textContent = warnings.join(" ");
+}
+
+function setEngineMessage(message = "") {
+  if (!message) {
+    engineBox.hidden = true;
+    engineBox.textContent = "";
+    return;
+  }
+
+  engineBox.hidden = false;
+  engineBox.textContent = message;
 }
 
 function statusText(status) {
@@ -98,6 +118,7 @@ async function convert() {
   convertBtn.disabled = true;
   yamlOutput.textContent = "转换中...";
   setWarnings([]);
+  setEngineMessage("");
 
   try {
     const response = await fetch("/api/convert", {
@@ -109,6 +130,7 @@ async function convert() {
         title: titleInput.value,
         mode: modeInput.value,
         density: densityInput.value,
+        engine: engineInput.value,
         characters: charactersInput.value,
         themes: themesInput.value,
         text: novelInput.value
@@ -122,11 +144,19 @@ async function convert() {
     setStats(data.stats);
     setWarnings(data.warnings);
     setQuality(data.quality);
+    if (data.meta?.ai?.requested && !data.meta.ai.used) {
+      setEngineMessage(data.meta.ai.reason || "AI 增强不可用，已回退到规则引擎。");
+    } else if (data.meta?.engine === "ai") {
+      setEngineMessage(`AI 增强已启用：${data.meta.ai?.model || "模型"} / ${data.meta.ai?.provider || "provider"}`);
+    } else {
+      setEngineMessage("当前使用规则引擎，可在配置 OPENAI_API_KEY 后启用 AI 增强。");
+    }
   } catch (error) {
     latestYaml = "";
     yamlOutput.textContent = error instanceof Error ? error.message : "转换失败";
     setStats();
     setQuality();
+    setEngineMessage("");
   } finally {
     convertBtn.disabled = false;
   }
@@ -178,9 +208,11 @@ function clearWorkspace() {
   novelInput.value = "";
   yamlOutput.textContent = "等待转换...";
   fileInput.value = "";
+  engineInput.value = "rules";
   setStats();
   setWarnings([]);
   setQuality();
+  setEngineMessage("");
 }
 
 loadSampleBtn.addEventListener("click", () => {
@@ -197,5 +229,25 @@ copyBtn.addEventListener("click", copyYaml);
 downloadBtn.addEventListener("click", downloadYaml);
 clearBtn.addEventListener("click", clearWorkspace);
 
+async function loadConfig() {
+  try {
+    const response = await fetch("/api/config");
+    const data = await response.json();
+    if (data.ok) appConfig = data;
+  } catch {
+    appConfig = { ai: { enabled: false, model: "", provider: "" } };
+  }
+
+  const aiOption = engineInput.querySelector('option[value="ai"]');
+  if (appConfig.ai.enabled) {
+    aiOption.textContent = `AI 增强 (${appConfig.ai.model})`;
+    aiOption.disabled = false;
+  } else {
+    aiOption.textContent = "AI 增强 (需配置)";
+    aiOption.disabled = false;
+  }
+}
+
 setStats();
 setQuality();
+loadConfig();
