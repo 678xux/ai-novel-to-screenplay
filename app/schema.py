@@ -51,6 +51,8 @@ SCREENPLAY_SCHEMA = {
                                 "text": "string",
                                 "emotion": "string?",
                                 "camera": "string?",
+                                "hook": "string?",
+                                "stage_direction": "string?",
                             }
                         ],
                         "conflict": "string",
