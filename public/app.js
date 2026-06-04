@@ -26,6 +26,10 @@ const charactersInput = document.querySelector("#charactersInput");
 const themesInput = document.querySelector("#themesInput");
 const novelInput = document.querySelector("#novelInput");
 const yamlOutput = document.querySelector("#yamlOutput");
+const outlineOutput = document.querySelector("#outlineOutput");
+const yamlFrame = document.querySelector(".yaml-frame");
+const yamlViewBtn = document.querySelector("#yamlViewBtn");
+const outlineViewBtn = document.querySelector("#outlineViewBtn");
 const warningBox = document.querySelector("#warningBox");
 const engineBox = document.querySelector("#engineBox");
 const convertBtn = document.querySelector("#convertBtn");
@@ -47,6 +51,7 @@ const analysisWarnings = document.querySelector("#analysisWarnings");
 const chapterList = document.querySelector("#chapterList");
 
 let latestYaml = "";
+let latestScript = null;
 let appConfig = {
   ai: {
     enabled: false,
@@ -54,6 +59,15 @@ let appConfig = {
     provider: ""
   }
 };
+
+function escapeHtml(value = "") {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
 
 titleInput.value = "";
 charactersInput.value = "";
@@ -188,6 +202,84 @@ function setQuality(quality) {
     .join("");
 }
 
+function beatTypeLabel(type) {
+  if (type === "dialogue") return "对白";
+  if (type === "narration") return "旁白";
+  if (type === "transition") return "转场";
+  return "动作";
+}
+
+function renderOutline(script) {
+  if (!script) {
+    outlineOutput.innerHTML = '<div class="outline-empty">等待转换...</div>';
+    return;
+  }
+
+  const characters = script.characters?.length
+    ? `<section class="outline-section">
+        <h3 class="outline-title">角色</h3>
+        <div class="outline-meta">
+          ${script.characters.map((character) => `<span class="outline-chip">${escapeHtml(character.name)} · ${escapeHtml(character.role || "角色")}</span>`).join("")}
+        </div>
+      </section>`
+    : "";
+
+  const acts = (script.acts || [])
+    .map((act) => `
+      <section class="outline-section">
+        <h3 class="outline-title">${escapeHtml(act.title)}</h3>
+        <div class="outline-meta">
+          <span class="outline-chip">${escapeHtml(act.id)}</span>
+          <span class="outline-chip">${escapeHtml(act.purpose || "待确认")}</span>
+        </div>
+        ${(act.scenes || []).map((scene) => `
+          <div class="outline-section">
+            <h4 class="outline-title">${escapeHtml(scene.title)}</h4>
+            <div class="outline-meta">
+              <span class="outline-chip">${escapeHtml(scene.location)}</span>
+              <span class="outline-chip">${escapeHtml(scene.time)}</span>
+              <span class="outline-chip">${escapeHtml(scene.mood)}</span>
+              <span class="outline-chip">${escapeHtml(scene.source_chapter)}</span>
+            </div>
+            <p class="outline-text">${escapeHtml(scene.summary)}</p>
+            <div class="outline-grid">
+              <div class="outline-field"><span>冲突</span><strong>${escapeHtml(scene.conflict)}</strong></div>
+              <div class="outline-field"><span>转折</span><strong>${escapeHtml(scene.turning_point)}</strong></div>
+            </div>
+            <div class="beat-list">
+              ${(scene.beats || []).slice(0, 8).map((beat) => `
+                <div class="beat-item">
+                  <div class="beat-type">${beatTypeLabel(beat.type)}${beat.speaker ? ` · ${escapeHtml(beat.speaker)}` : ""}</div>
+                  <div>${escapeHtml(beat.text)}</div>
+                </div>`).join("")}
+            </div>
+          </div>`).join("")}
+      </section>`)
+    .join("");
+
+  outlineOutput.innerHTML = `
+    <section class="outline-section">
+      <h3 class="outline-title">${escapeHtml(script.title)}</h3>
+      <p class="outline-text">${escapeHtml(script.logline)}</p>
+      <div class="outline-meta">
+        ${(script.themes || []).map((theme) => `<span class="outline-chip">${escapeHtml(theme)}</span>`).join("")}
+      </div>
+    </section>
+    ${characters}
+    ${acts || '<div class="outline-empty">暂无幕和场景。</div>'}
+  `;
+}
+
+function setOutputView(view) {
+  const showOutline = view === "outline";
+  outlineOutput.hidden = !showOutline;
+  yamlFrame.hidden = showOutline;
+  outlineViewBtn.classList.toggle("active", showOutline);
+  yamlViewBtn.classList.toggle("active", !showOutline);
+  outlineViewBtn.setAttribute("aria-selected", String(showOutline));
+  yamlViewBtn.setAttribute("aria-selected", String(!showOutline));
+}
+
 async function convert() {
   convertBtn.disabled = true;
   yamlOutput.textContent = "转换中...";
@@ -214,7 +306,9 @@ async function convert() {
     if (!data.ok) throw new Error(data.error || "转换失败");
 
     latestYaml = data.yaml;
+    latestScript = data.script;
     yamlOutput.textContent = data.yaml;
+    renderOutline(data.script);
     setStats(data.stats);
     setWarnings(data.warnings);
     setQuality(data.quality);
@@ -227,7 +321,9 @@ async function convert() {
     }
   } catch (error) {
     latestYaml = "";
+    latestScript = null;
     yamlOutput.textContent = error instanceof Error ? error.message : "转换失败";
+    renderOutline(null);
     setStats();
     setQuality();
     setEngineMessage("");
@@ -282,11 +378,13 @@ function downloadYaml() {
 
 function clearWorkspace() {
   latestYaml = "";
+  latestScript = null;
   titleInput.value = "";
   charactersInput.value = "";
   themesInput.value = "";
   novelInput.value = "";
   yamlOutput.textContent = "等待转换...";
+  renderOutline(null);
   fileInput.value = "";
   engineInput.value = "rules";
   setStats();
@@ -310,6 +408,8 @@ analyzeBtn.addEventListener("click", analyzeInput);
 copyBtn.addEventListener("click", copyYaml);
 downloadBtn.addEventListener("click", downloadYaml);
 clearBtn.addEventListener("click", clearWorkspace);
+yamlViewBtn.addEventListener("click", () => setOutputView("yaml"));
+outlineViewBtn.addEventListener("click", () => setOutputView("outline"));
 
 async function loadConfig() {
   try {
@@ -333,4 +433,6 @@ async function loadConfig() {
 setStats();
 setQuality();
 setAnalysis();
+renderOutline(null);
+setOutputView("yaml");
 loadConfig();
