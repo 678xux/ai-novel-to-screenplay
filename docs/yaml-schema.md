@@ -84,12 +84,13 @@ acts:
     source_chapters:
       - 第一章 雾港来信
     purpose: 建立人物、世界观与核心矛盾
+    estimated_runtime_minutes: 4.5
     scenes: []
 ```
 
 ### 设计原因
 
-“幕”是剧本结构的主要骨架。小说章节天然可以作为第一版幕结构，因此当前工具默认把章节映射为幕。这样既满足自动转换的稳定性，又方便作者后续把多个章节合并为一幕，或把一个章节拆成多个幕。
+“幕”是剧本结构的主要骨架。小说章节天然可以作为第一版幕结构，因此当前工具默认把章节映射为幕。`estimated_runtime_minutes` 让作者在章节级别看到篇幅分布，判断某一幕是否过重或过轻。这样既满足自动转换的稳定性，又方便作者后续把多个章节合并为一幕，或把一个章节拆成多个幕。
 
 ## scenes
 
@@ -102,6 +103,7 @@ scenes:
     time: 清晨
     mood: 紧张
     summary: 林澈收到匿名信并决定前往旧灯塔。
+    estimated_runtime_minutes: 1.8
     objective: 推动人物完成关键行动：林澈收到匿名信并决定前往旧灯塔。
     obstacle: 林澈必须在警告和真相之间做选择。
     outcome: 售票亭电话响起，提示信不是给他的。
@@ -120,6 +122,7 @@ scenes:
 
 - `location` 与 `time` 对拍摄和舞台调度非常关键。
 - `summary` 让作者快速扫读整集结构。
+- `estimated_runtime_minutes` 帮助作者判断单场是否过长或过碎，便于继续拆分、合并或调整节奏。
 - `objective`、`obstacle`、`outcome` 对应场景目标、阻碍和结果，方便作者判断每场是否有明确戏剧推进。
 - `conflict` 与 `turning_point` 帮助作者判断场景是否有戏剧推进。
 - `props` 为后续分镜、拍摄计划和美术准备保留扩展空间。
@@ -160,6 +163,13 @@ beats:
 ```yaml
 production_notes:
   estimated_runtime_minutes: 18
+  runtime_plan:
+    average_scene_minutes: 2.4
+    shortest_scene_minutes: 1.5
+    longest_scene_minutes: 3.2
+    pacing: 场景时长较均衡，适合作为剧本初稿继续打磨。
+    notes:
+      - 根据节拍数量、对白/动作类型和文本体量估算时长，提交前仍需人工朗读校准。
   adaptation_warnings:
     - 输入章节少于 3 个，不满足比赛题目要求。
   revision_suggestions:
@@ -169,7 +179,7 @@ production_notes:
 
 ### 设计原因
 
-自动转换不应该假装一次完成专业剧本。`production_notes` 明确告诉作者哪些地方需要复核，例如章节数量不足、角色识别不确定、心理描写需要视觉化。这样工具更符合“AI 辅助创作”的定位：先给出可用初稿，再引导作者打磨。
+自动转换不应该假装一次完成专业剧本。`production_notes` 明确告诉作者哪些地方需要复核，例如章节数量不足、角色识别不确定、心理描写需要视觉化。`runtime_plan` 进一步把总时长、场均时长、最长场和最短场集中展示，让作者能在改对白之前先判断篇幅和节奏是否适合目标媒介。这样工具更符合“AI 辅助创作”的定位：先给出可用初稿，再引导作者打磨。
 
 ## 完整示例
 
@@ -203,6 +213,7 @@ script:
       source_chapters:
         - 第一章 雾港来信
       purpose: 建立人物、世界观与核心矛盾
+      estimated_runtime_minutes: 1.8
       scenes:
         - id: scene_01_01
           title: 第一章 雾港来信 · 场景 1
@@ -211,6 +222,7 @@ script:
           time: 清晨
           mood: 紧张
           summary: 林澈收到匿名信并决定前往旧灯塔。
+          estimated_runtime_minutes: 1.8
           objective: 推动人物完成关键行动：林澈收到匿名信并决定前往旧灯塔。
           obstacle: 林澈必须在警告和真相之间做选择。
           outcome: 售票亭电话响起，提示信不是给他的。
@@ -232,6 +244,13 @@ script:
             - 建议人工校准场景边界。
   production_notes:
     estimated_runtime_minutes: 18
+    runtime_plan:
+      average_scene_minutes: 2.4
+      shortest_scene_minutes: 1.5
+      longest_scene_minutes: 3.2
+      pacing: 场景时长较均衡，适合作为剧本初稿继续打磨。
+      notes:
+        - 根据节拍数量、对白/动作类型和文本体量估算时长，提交前仍需人工朗读校准。
     adaptation_warnings: []
     revision_suggestions:
       - 复核角色名与对白归属。

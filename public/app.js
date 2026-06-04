@@ -229,7 +229,9 @@ function setQuality(quality) {
   qualityMetrics.innerHTML = [
     ["输入字数", quality.metrics.input_chars],
     ["平均章长", quality.metrics.average_chapter_chars],
-    ["对白节拍", quality.metrics.dialogue_beat_count]
+    ["对白节拍", quality.metrics.dialogue_beat_count],
+    ["预计时长", `${quality.metrics.estimated_runtime_minutes || 0} 分钟`],
+    ["场均时长", `${quality.metrics.average_scene_minutes || 0} 分钟`]
   ]
     .map(([label, value]) => `<div><span>${label}</span><strong>${value}</strong></div>`)
     .join("");
@@ -281,6 +283,7 @@ function renderOutline(script) {
         <div class="outline-meta">
           <span class="outline-chip">${escapeHtml(act.id)}</span>
           <span class="outline-chip">${escapeHtml(act.purpose || "待确认")}</span>
+          ${act.estimated_runtime_minutes ? `<span class="outline-chip">${escapeHtml(act.estimated_runtime_minutes)} 分钟</span>` : ""}
         </div>
         ${(act.scenes || []).map((scene) => `
           <div class="outline-section">
@@ -290,6 +293,7 @@ function renderOutline(script) {
               <span class="outline-chip">${escapeHtml(scene.time)}</span>
               <span class="outline-chip">${escapeHtml(scene.mood)}</span>
               <span class="outline-chip">${escapeHtml(scene.source_chapter)}</span>
+              ${scene.estimated_runtime_minutes ? `<span class="outline-chip">${escapeHtml(scene.estimated_runtime_minutes)} 分钟</span>` : ""}
             </div>
             <p class="outline-text">${escapeHtml(scene.summary)}</p>
             <div class="outline-grid">
@@ -316,6 +320,21 @@ function renderOutline(script) {
       </section>`)
     .join("");
 
+  const productionNotes = script.production_notes || {};
+  const runtimePlan = productionNotes.runtime_plan || {};
+  const runtimeSection = productionNotes.estimated_runtime_minutes || runtimePlan.pacing
+    ? `<section class="outline-section">
+        <h3 class="outline-title">篇幅规划</h3>
+        <div class="outline-grid">
+          <div class="outline-field"><span>总时长</span><strong>${escapeHtml(productionNotes.estimated_runtime_minutes || 0)} 分钟</strong></div>
+          <div class="outline-field"><span>场均</span><strong>${escapeHtml(runtimePlan.average_scene_minutes || 0)} 分钟</strong></div>
+          <div class="outline-field"><span>最短场</span><strong>${escapeHtml(runtimePlan.shortest_scene_minutes || 0)} 分钟</strong></div>
+          <div class="outline-field"><span>最长场</span><strong>${escapeHtml(runtimePlan.longest_scene_minutes || 0)} 分钟</strong></div>
+        </div>
+        ${runtimePlan.pacing ? `<p class="outline-text">${escapeHtml(runtimePlan.pacing)}</p>` : ""}
+      </section>`
+    : "";
+
   outlineOutput.innerHTML = `
     <section class="outline-section">
       <h3 class="outline-title">${escapeHtml(script.title)}</h3>
@@ -324,6 +343,7 @@ function renderOutline(script) {
         ${(script.themes || []).map((theme) => `<span class="outline-chip">${escapeHtml(theme)}</span>`).join("")}
       </div>
     </section>
+    ${runtimeSection}
     ${characters}
     ${acts || '<div class="outline-empty">暂无幕和场景。</div>'}
   `;

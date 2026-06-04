@@ -19,6 +19,7 @@ def validate_screenplay_structure(script: dict) -> list[dict]:
     source = script.get("source") or {}
     acts = script.get("acts") or []
     scenes = [scene for act in acts for scene in act.get("scenes", [])]
+    production_notes = script.get("production_notes") or {}
     schema_errors = validate_screenplay_script(script)
 
     checks = [
@@ -68,6 +69,13 @@ def validate_screenplay_structure(script: dict) -> list[dict]:
             "warning",
             "每个场景应保留 source_chapter，便于回到原小说核对。",
         ),
+        make_check(
+            "runtime_plan",
+            "篇幅规划",
+            bool(production_notes.get("estimated_runtime_minutes")) and bool(production_notes.get("runtime_plan")),
+            "info",
+            "应提供总时长、场均时长和节奏建议，方便作者判断初稿篇幅。",
+        ),
     ]
     return checks
 
@@ -79,6 +87,8 @@ def build_quality_report(chapters: list[dict], script: dict, raw_text: str) -> d
     dialogue_beats = [beat for beat in beats if beat.get("type") == "dialogue"]
     chapter_lengths = [text_length(chapter.get("text", "")) for chapter in chapters]
     total_length = text_length(raw_text)
+    production_notes = script.get("production_notes") or {}
+    runtime_plan = production_notes.get("runtime_plan") or {}
     checks = validate_screenplay_structure(script)
 
     checks.append(
@@ -125,6 +135,8 @@ def build_quality_report(chapters: list[dict], script: dict, raw_text: str) -> d
         suggestions.append("原文对白较少时，可在生成后人工添加角色对白。")
     if len(scenes) < len(chapters):
         suggestions.append("把输出密度切换为“细分”，让长章节拆出更多场景。")
+    if runtime_plan.get("pacing"):
+        suggestions.append(str(runtime_plan["pacing"]))
 
     average_chapter_chars = round(sum(chapter_lengths) / len(chapter_lengths)) if chapter_lengths else 0
     return {
@@ -137,6 +149,8 @@ def build_quality_report(chapters: list[dict], script: dict, raw_text: str) -> d
             "scene_count": len(scenes),
             "beat_count": len(beats),
             "dialogue_beat_count": len(dialogue_beats),
+            "estimated_runtime_minutes": production_notes.get("estimated_runtime_minutes", 0),
+            "average_scene_minutes": runtime_plan.get("average_scene_minutes", 0),
         },
         "checks": checks,
         "suggestions": suggestions,
