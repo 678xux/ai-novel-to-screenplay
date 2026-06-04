@@ -129,6 +129,8 @@ beats:
     type: action
     text: 林澈站在废弃售票亭前，手里捏着一封没有署名的信。
     camera: 中景
+    hook: 保留反转/悬念，适合短剧卡点
+    stage_direction: 用灯光、走位和停顿呈现
   - id: scene_01_01_beat_02
     type: dialogue
     speaker: 周栩
@@ -146,6 +148,8 @@ beats:
 - `transition` 用于转场提示。
 
 `camera` 和 `emotion` 不是强制字段，但可以辅助作者继续发展分镜和表演提示。
+
+当 `adaptation_mode` 为 `short` 时，节拍可包含 `hook`，用于提示短剧卡点、反转或追看点。当 `adaptation_mode` 为 `stage` 时，节拍可包含 `stage_direction`，用于提示灯光、走位、停顿和上下场调度。
 
 ## production_notes
 

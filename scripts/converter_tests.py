@@ -116,6 +116,22 @@ long_compact = convert_novel_to_screenplay({"title": "Long split", "text": long_
 assert_true(long_balanced["stats"]["scenes"] > long_balanced["stats"]["chapters"], "long text creates extra scenes")
 assert_true(long_balanced["stats"]["scenes"] >= long_compact["stats"]["scenes"], "density affects integrated scene count")
 
+mode_results = {
+    mode: convert_novel_to_screenplay({"title": f"Mode {mode}", "text": long_scene_text, "characters": "林青，阿禾", "mode": mode})
+    for mode in ["drama", "short", "stage"]
+}
+for mode, result in mode_results.items():
+    assert_true(validate_screenplay_script(result["script"]) == [], f"{mode} schema validation")
+
+drama_beats = [beat for act in mode_results["drama"]["script"]["acts"] for scene in act["scenes"] for beat in scene["beats"]]
+short_beats = [beat for act in mode_results["short"]["script"]["acts"] for scene in act["scenes"] for beat in scene["beats"]]
+stage_beats = [beat for act in mode_results["stage"]["script"]["acts"] for scene in act["scenes"] for beat in scene["beats"]]
+assert_true(any("camera" in beat for beat in drama_beats), "drama mode camera hints")
+assert_true(any("hook" in beat for beat in short_beats), "short mode hook hints")
+assert_true(any("stage_direction" in beat for beat in stage_beats), "stage mode stage directions")
+assert_true(any("短剧钩子" in note for note in mode_results["short"]["script"]["production_notes"]["revision_suggestions"]), "short mode suggestions")
+assert_true(any("舞台空间" in note for note in mode_results["stage"]["script"]["production_notes"]["revision_suggestions"]), "stage mode suggestions")
+
 short_result = convert_novel_to_screenplay({"title": "Short input", "text": "第一章 只有一章\n主角说：“还不够。”"})
 assert_true(short_result["stats"]["chapters"] == 1, "short chapter count")
 assert_true(any("少于 3" in warning for warning in short_result["warnings"]), "short warning")

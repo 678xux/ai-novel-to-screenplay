@@ -200,7 +200,15 @@ def extract_props(text: str) -> list[str]:
     return props[:8]
 
 
-def create_beats(paragraphs: list[str], scene_id: str, known_names: list[str] | None = None) -> list[dict]:
+def mode_hint_fields(mode: str, text: str, beat_type: str) -> dict:
+    if mode == "short":
+        return {"hook": "保留反转/悬念，适合短剧卡点"} if re.search(r"突然|发现|危险|秘密|决定|出现|揭开", text) else {"hook": "压缩信息，推进下一场"}
+    if mode == "stage":
+        return {"stage_direction": "用灯光、走位和停顿呈现"} if beat_type != "dialogue" else {"stage_direction": "对白后保留表演停顿"}
+    return {"camera": "特写" if re.search(r"看见|望向|盯着|发现", text) else "中景"}
+
+
+def create_beats(paragraphs: list[str], scene_id: str, known_names: list[str] | None = None, mode: str = "drama") -> list[dict]:
     known_names = known_names or []
     beats = []
     for paragraph in paragraphs:
@@ -209,33 +217,38 @@ def create_beats(paragraphs: list[str], scene_id: str, known_names: list[str] | 
             speaker = extract_speaker(paragraph, known_names)
             action_text = DIALOGUE_PATTERN.sub("", paragraph).strip()
             if action_text:
+                action_summary = summarize(action_text, 120)
                 beats.append(
                     {
                         "id": f"{scene_id}_beat_{len(beats) + 1:02d}",
                         "type": "action",
-                        "text": summarize(action_text, 120),
-                        "camera": "中景",
+                        "text": action_summary,
+                        **mode_hint_fields(mode, action_summary, "action"),
                     }
                 )
             for dialogue in dialogues:
+                dialogue_text = dialogue.group(1).strip()
                 beats.append(
                     {
                         "id": f"{scene_id}_beat_{len(beats) + 1:02d}",
                         "type": "dialogue",
                         "speaker": speaker or "待定角色",
-                        "text": dialogue.group(1).strip(),
+                        "text": dialogue_text,
                         "emotion": pick_match(paragraph, EMOTION_PATTERN, "待细化"),
+                        **mode_hint_fields(mode, dialogue_text, "dialogue"),
                     }
                 )
             continue
 
         for sentence in sentence_split(paragraph)[:3]:
+            beat_type = "narration" if re.search(r"回忆|心想|想到|意识到", sentence) else "action"
+            sentence_summary = summarize(sentence, 120)
             beats.append(
                 {
                     "id": f"{scene_id}_beat_{len(beats) + 1:02d}",
-                    "type": "narration" if re.search(r"回忆|心想|想到|意识到", sentence) else "action",
-                    "text": summarize(sentence, 120),
-                    "camera": "特写" if re.search(r"看见|望向|盯着|发现", sentence) else "中景",
+                    "type": beat_type,
+                    "text": sentence_summary,
+                    **mode_hint_fields(mode, sentence_summary, beat_type),
                 }
             )
     return beats[:12]
@@ -289,7 +302,15 @@ def split_scene_groups(paragraphs: list[str], density: str) -> list[list[str]]:
     return groups
 
 
-def chapter_to_scenes(chapter: dict, chapter_index: int, density: str, known_names: list[str]) -> list[dict]:
+def mode_scene_note(mode: str) -> str:
+    if mode == "short":
+        return "短剧模式：每场建议保留一个强钩子或反转点。"
+    if mode == "stage":
+        return "舞台剧模式：关注舞台调度、灯光和演员走位。"
+    return "影视剧模式：关注镜头、场面调度和可视化动作。"
+
+
+def chapter_to_scenes(chapter: dict, chapter_index: int, density: str, known_names: list[str], mode: str) -> list[dict]:
     paragraphs = split_paragraphs(chapter.get("text", ""))
     scenes = []
     for scene_index, group in enumerate(split_scene_groups(paragraphs, density), start=1):
@@ -304,17 +325,17 @@ def chapter_to_scenes(chapter: dict, chapter_index: int, density: str, known_nam
                 "time": pick_match(scene_text, TIME_PATTERN, "待定时间"),
                 "mood": infer_mood(scene_text),
                 "summary": summarize(scene_text or chapter["title"]),
-                "beats": create_beats(group, scene_id, known_names),
+                "beats": create_beats(group, scene_id, known_names, mode),
                 "conflict": summarize((re.search(r"[^。！？!?]*(?:冲突|争执|危险|秘密|误会|选择|背叛|阻止|追问)[^。！？!?]*", scene_text) or ["本场冲突需要二次打磨。"])[0], 80),
                 "turning_point": summarize((re.search(r"[^。！？!?]*(?:突然|终于|决定|发现|转身|离开|出现|揭开)[^。！？!?]*", scene_text) or ["转折点待编剧确认。"])[0], 80),
                 "props": extract_props(scene_text),
-                "notes": ["由小说段落与场景边界线索自动拆分，建议人工校准场景边界。"],
+                "notes": ["由小说段落与场景边界线索自动拆分，建议人工校准场景边界。", mode_scene_note(mode)],
             }
         )
     return scenes
 
 
-def build_acts(chapters: list[dict], density: str, known_names: list[str]) -> list[dict]:
+def build_acts(chapters: list[dict], density: str, known_names: list[str], mode: str) -> list[dict]:
     acts = []
     for index, chapter in enumerate(chapters):
         purpose = "建立人物、世界观与核心矛盾" if index == 0 else "推进高潮并留下后续打磨空间" if index == len(chapters) - 1 else "升级冲突并推动人物选择"
@@ -324,7 +345,7 @@ def build_acts(chapters: list[dict], density: str, known_names: list[str]) -> li
                 "title": chapter["title"],
                 "source_chapters": [chapter["title"]],
                 "purpose": purpose,
-                "scenes": chapter_to_scenes(chapter, index, density, known_names),
+                "scenes": chapter_to_scenes(chapter, index, density, known_names, mode),
             }
         )
     return acts
@@ -369,6 +390,19 @@ def enrich_character_arcs(characters: list[dict], acts: list[dict]) -> list[dict
             character["goal"] = "待编剧确认"
             character["arc"] = "待补充人物功能和变化"
     return characters
+
+
+def mode_revision_suggestions(mode: str) -> list[str]:
+    common = [
+        "复核角色名与对白归属。",
+        "把小说心理描写改写成可表演动作。",
+        "为每场补充明确的场景目标、阻碍与转折。",
+    ]
+    if mode == "short":
+        return common + ["检查每场结尾是否有短剧钩子、反转或追看点。"]
+    if mode == "stage":
+        return common + ["补充舞台空间、灯光变化、演员走位和上下场调度。"]
+    return common + ["补充镜头景别、场面调度和可视化动作细节。"]
 
 
 def yaml_scalar(value: Any) -> str:
@@ -454,13 +488,14 @@ def convert_novel_to_screenplay(payload: dict | None = None) -> dict:
     title = normalize_text(payload.get("title")) or "未命名小说改编"
     text = normalize_text(payload.get("text"))
     density = payload.get("density") or "balanced"
+    mode = payload.get("mode") or "drama"
     if not text:
         raise ValueError("请先输入小说文本。")
 
     chapters = split_chapters(text)
     known_names = parse_name_list(payload.get("characters", ""))
     characters = extract_characters(chapters, payload.get("characters", ""))
-    acts = build_acts(chapters, density, known_names)
+    acts = build_acts(chapters, density, known_names, mode)
     characters = enrich_character_arcs(characters, acts)
     themes = parse_name_list(payload.get("themes", "")) or ["人物选择", "冲突升级", "情感转折"]
     script = {
@@ -470,7 +505,7 @@ def convert_novel_to_screenplay(payload: dict | None = None) -> dict:
             "type": "novel",
             "chapter_count": len(chapters),
             "input_language": "zh-CN",
-            "adaptation_mode": payload.get("mode") or "drama",
+            "adaptation_mode": mode,
         },
         "logline": summarize("\n".join(chapter.get("text", "") for chapter in chapters), 110),
         "themes": themes,
@@ -479,11 +514,7 @@ def convert_novel_to_screenplay(payload: dict | None = None) -> dict:
         "production_notes": {
             "estimated_runtime_minutes": max(8, round(len(chapters) * (9 if density == "detailed" else 4 if density == "compact" else 6))),
             "adaptation_warnings": [],
-            "revision_suggestions": [
-                "复核角色名与对白归属。",
-                "把小说心理描写改写成可表演动作。",
-                "为每场补充明确的场景目标、阻碍与转折。",
-            ],
+            "revision_suggestions": mode_revision_suggestions(mode),
         },
     }
     return build_conversion_result(script, chapters, text, {"engine": "rules"})
