@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.DS_Store
+Thumbs.db
+
+# Local competition materials and document-render scratch files.
+作品提交.docx
+_competition_requirements.docx
+~$*.docx
+_docx_render/
+
+# Runtime artifacts.
+*.log
+*.screenplay.yaml

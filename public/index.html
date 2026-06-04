@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI 小说转剧本工具</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div>
+        <h1>AI 小说转剧本工具</h1>
+        <p>小说章节 → 结构化剧本 YAML</p>
+      </div>
+      <div class="header-actions">
+        <label class="file-button" title="导入 TXT 小说">
+          <span aria-hidden="true">⇪</span>
+          导入
+          <input id="fileInput" type="file" accept=".txt,.md,text/plain,text/markdown" />
+        </label>
+        <button id="loadSampleBtn" class="secondary" type="button" title="载入示例文本">
+          <span aria-hidden="true">↧</span>
+          示例
+        </button>
+        <button id="convertBtn" type="button" title="转换为 YAML 剧本">
+          <span aria-hidden="true">▶</span>
+          转换
+        </button>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <section class="panel input-panel" aria-label="小说输入">
+        <div class="panel-toolbar">
+          <label class="field compact">
+            <span>作品名</span>
+            <input id="titleInput" value="雾港来信" />
+          </label>
+          <label class="field compact">
+            <span>模式</span>
+            <select id="modeInput">
+              <option value="drama">影视剧</option>
+              <option value="short">短剧</option>
+              <option value="stage">舞台剧</option>
+            </select>
+          </label>
+          <label class="field compact">
+            <span>密度</span>
+            <select id="densityInput">
+              <option value="balanced">均衡</option>
+              <option value="detailed">细分</option>
+              <option value="compact">紧凑</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="meta-grid">
+          <label class="field">
+            <span>主要角色</span>
+            <input id="charactersInput" placeholder="林澈，沈雾，周栩" />
+          </label>
+          <label class="field">
+            <span>主题</span>
+            <input id="themesInput" placeholder="信任，成长，真相" />
+          </label>
+        </div>
+
+        <label class="editor-field">
+          <span>小说正文</span>
+          <textarea id="novelInput" spellcheck="false" placeholder="粘贴 3 个章节以上的小说文本，或点击右上角“导入”读取 TXT/Markdown 文件。支持第一章、Chapter 1、1. 标题等常见章节格式。"></textarea>
+        </label>
+      </section>
+
+      <section class="panel output-panel" aria-label="YAML 输出">
+        <div class="result-strip">
+          <div class="stat">
+            <strong id="chapterStat">0</strong>
+            <span>章节</span>
+          </div>
+          <div class="stat">
+            <strong id="characterStat">0</strong>
+            <span>角色</span>
+          </div>
+          <div class="stat">
+            <strong id="sceneStat">0</strong>
+            <span>场景</span>
+          </div>
+          <div class="stat">
+            <strong id="beatStat">0</strong>
+            <span>节拍</span>
+          </div>
+          <button id="copyBtn" class="icon-btn" type="button" title="复制 YAML" aria-label="复制 YAML">
+            ⧉
+          </button>
+          <button id="downloadBtn" class="icon-btn" type="button" title="下载 YAML" aria-label="下载 YAML">
+            ⇩
+          </button>
+        </div>
+
+        <div id="warningBox" class="warning-box" hidden></div>
+        <pre class="yaml-frame"><code id="yamlOutput">等待转换...</code></pre>
+      </section>
+    </main>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
