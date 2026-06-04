@@ -126,6 +126,11 @@
           <div id="qualityMetrics" class="quality-metrics"></div>
           <div id="qualityChecks" class="quality-checks"></div>
         </div>
+        <div class="view-tabs" role="tablist" aria-label="输出视图">
+          <button id="yamlViewBtn" class="view-tab active" type="button" role="tab" aria-selected="true">YAML</button>
+          <button id="outlineViewBtn" class="view-tab" type="button" role="tab" aria-selected="false">大纲</button>
+        </div>
+        <div id="outlineOutput" class="outline-frame" hidden>等待转换...</div>
         <pre class="yaml-frame"><code id="yamlOutput">等待转换...</code></pre>
       </section>
     </main>

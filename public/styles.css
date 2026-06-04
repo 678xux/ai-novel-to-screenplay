@@ -418,6 +418,145 @@ textarea:focus {
   background: #fff4df;
 }
 
+.view-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 12px 14px 0;
+}
+
+.view-tab {
+  min-height: 32px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 0 12px;
+  color: var(--muted);
+  background: #fff;
+}
+
+.view-tab:hover {
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+}
+
+.view-tab.active {
+  color: #fff;
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.outline-frame {
+  flex: 1;
+  min-height: 0;
+  margin: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: auto;
+  background: #fff;
+  padding: 14px;
+}
+
+.outline-empty {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.outline-section {
+  border-bottom: 1px solid var(--line);
+  padding: 12px 0;
+}
+
+.outline-section:first-child {
+  padding-top: 0;
+}
+
+.outline-section:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.outline-title {
+  margin: 0 0 8px;
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.outline-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.outline-chip {
+  border: 1px solid #bddbd5;
+  border-radius: 999px;
+  padding: 3px 8px;
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+  font-size: 12px;
+}
+
+.outline-text {
+  margin: 0 0 8px;
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.outline-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.outline-field {
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 8px 10px;
+  background: #fbfcfa;
+}
+
+.outline-field span,
+.beat-list span {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.outline-field strong {
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.beat-list {
+  margin-top: 8px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #fbfcfa;
+  overflow: hidden;
+}
+
+.beat-item {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 8px;
+  padding: 7px 9px;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.beat-item:last-child {
+  border-bottom: 0;
+}
+
+.beat-type {
+  color: var(--accent-strong);
+  font-weight: 700;
+}
+
 .yaml-frame {
   flex: 1;
   min-height: 0;
@@ -470,7 +609,9 @@ textarea:focus {
   }
 
   .analysis-summary,
-  .chapter-row {
+  .chapter-row,
+  .outline-grid,
+  .beat-item {
     grid-template-columns: 1fr 1fr;
   }
 
