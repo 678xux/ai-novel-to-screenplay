@@ -3,13 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "description": "AI-assisted tool that converts 3+ novel chapters into editable screenplay YAML.",
-  "type": "module",
   "scripts": {
-    "start": "node server.js",
-    "check": "node scripts/smoke-check.js",
-    "test": "node scripts/converter-tests.js"
-  },
-  "engines": {
-    "node": ">=18"
+    "start": "python -m app.server",
+    "check": "python scripts/smoke_check.py",
+    "test": "python scripts/converter_tests.py"
   }
 }

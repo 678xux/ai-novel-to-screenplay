@@ -36,6 +36,11 @@
    - 测试：无 API Key 时仍可使用规则引擎，有 API Key 时可生成更自然的场景和对白。
    - 状态：通过 `feature/optional-ai-adapter` 分支实现，支持自动回退和配置检测。
 
+7. Python 后端迁移
+   - 范围：将服务端、转换器、质量报告和 AI adapter 迁移到 Python 标准库实现。
+   - 测试：`npm run check`、`npm test`，浏览器验证静态页面/API 行为不变。
+   - 目的：减少运行时依赖，便于评委和作者在本地复现。
+
 ## PR 描述模板
 
 ```md
