@@ -31,6 +31,12 @@ const loadSampleBtn = document.querySelector("#loadSampleBtn");
 const fileInput = document.querySelector("#fileInput");
 const copyBtn = document.querySelector("#copyBtn");
 const downloadBtn = document.querySelector("#downloadBtn");
+const clearBtn = document.querySelector("#clearBtn");
+const qualityBox = document.querySelector("#qualityBox");
+const qualityScore = document.querySelector("#qualityScore");
+const qualityStatus = document.querySelector("#qualityStatus");
+const qualityMetrics = document.querySelector("#qualityMetrics");
+const qualityChecks = document.querySelector("#qualityChecks");
 
 let latestYaml = "";
 
@@ -54,6 +60,38 @@ function setWarnings(warnings = []) {
 
   warningBox.hidden = false;
   warningBox.textContent = warnings.join(" ");
+}
+
+function statusText(status) {
+  if (status === "ready") return "结构完整";
+  if (status === "review") return "建议复核";
+  if (status === "needs_fix") return "需要修正";
+  return "等待输入";
+}
+
+function setQuality(quality) {
+  if (!quality) {
+    qualityBox.hidden = true;
+    qualityScore.textContent = "0";
+    qualityStatus.textContent = "等待输入";
+    qualityMetrics.textContent = "";
+    qualityChecks.textContent = "";
+    return;
+  }
+
+  qualityBox.hidden = false;
+  qualityScore.textContent = quality.score;
+  qualityStatus.textContent = statusText(quality.status);
+  qualityMetrics.innerHTML = [
+    ["输入字数", quality.metrics.input_chars],
+    ["平均章长", quality.metrics.average_chapter_chars],
+    ["对白节拍", quality.metrics.dialogue_beat_count]
+  ]
+    .map(([label, value]) => `<div><span>${label}</span><strong>${value}</strong></div>`)
+    .join("");
+  qualityChecks.innerHTML = quality.checks
+    .map((check) => `<span class="quality-pill ${check.passed ? "pass" : "fail"}" title="${check.message}">${check.passed ? "✓" : "!"} ${check.label}</span>`)
+    .join("");
 }
 
 async function convert() {
@@ -83,10 +121,12 @@ async function convert() {
     yamlOutput.textContent = data.yaml;
     setStats(data.stats);
     setWarnings(data.warnings);
+    setQuality(data.quality);
   } catch (error) {
     latestYaml = "";
     yamlOutput.textContent = error instanceof Error ? error.message : "转换失败";
     setStats();
+    setQuality();
   } finally {
     convertBtn.disabled = false;
   }
@@ -130,6 +170,19 @@ function downloadYaml() {
   URL.revokeObjectURL(url);
 }
 
+function clearWorkspace() {
+  latestYaml = "";
+  titleInput.value = "";
+  charactersInput.value = "";
+  themesInput.value = "";
+  novelInput.value = "";
+  yamlOutput.textContent = "等待转换...";
+  fileInput.value = "";
+  setStats();
+  setWarnings([]);
+  setQuality();
+}
+
 loadSampleBtn.addEventListener("click", () => {
   titleInput.value = "雾港来信";
   charactersInput.value = "林澈，沈雾，周栩";
@@ -142,5 +195,7 @@ convertBtn.addEventListener("click", convert);
 fileInput.addEventListener("change", importNovelFile);
 copyBtn.addEventListener("click", copyYaml);
 downloadBtn.addEventListener("click", downloadYaml);
+clearBtn.addEventListener("click", clearWorkspace);
 
 setStats();
+setQuality();

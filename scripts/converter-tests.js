@@ -55,6 +55,8 @@ for (const item of cases) {
   assert.ok(result.stats.scenes >= item.expectedChapters, item.name);
   assert.ok(result.yaml.includes("script:"), item.name);
   assert.ok(result.yaml.includes("acts:"), item.name);
+  assert.ok(result.quality.score > 0, item.name);
+  assert.equal(result.quality.metrics.chapter_count, item.expectedChapters, item.name);
 }
 
 const shortResult = convertNovelToScreenplay({
@@ -65,5 +67,6 @@ const shortResult = convertNovelToScreenplay({
 
 assert.equal(shortResult.stats.chapters, 1);
 assert.ok(shortResult.warnings.some((warning) => warning.includes("少于 3")));
+assert.equal(shortResult.quality.status, "needs_fix");
 
 console.log("Converter tests passed.");

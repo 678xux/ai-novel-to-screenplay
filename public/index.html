@@ -95,9 +95,20 @@
           <button id="downloadBtn" class="icon-btn" type="button" title="下载 YAML" aria-label="下载 YAML">
             ⇩
           </button>
+          <button id="clearBtn" class="icon-btn" type="button" title="清空输入" aria-label="清空输入">
+            ×
+          </button>
         </div>
 
         <div id="warningBox" class="warning-box" hidden></div>
+        <div id="qualityBox" class="quality-box" hidden>
+          <div class="quality-head">
+            <strong id="qualityScore">0</strong>
+            <span id="qualityStatus">等待输入</span>
+          </div>
+          <div id="qualityMetrics" class="quality-metrics"></div>
+          <div id="qualityChecks" class="quality-checks"></div>
+        </div>
         <pre class="yaml-frame"><code id="yamlOutput">等待转换...</code></pre>
       </section>
     </main>

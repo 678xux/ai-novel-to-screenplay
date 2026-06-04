@@ -1,4 +1,5 @@
 import { SCRIPT_SCHEMA_VERSION } from "./schema.js";
+import { buildQualityReport } from "./quality.js";
 
 const CHAPTER_PATTERN = /(?:^|\n)\s*((?:#{1,6}\s*)?(?:(?:第\s*[零〇一二三四五六七八九十百千万\d]+\s*[章节回幕卷部])|(?:[Cc][Hh][Aa][Pp][Tt][Ee][Rr]\s+\d+)|(?:卷\s*[零〇一二三四五六七八九十百千万\d]+)|(?:\d{1,4}\s*[.、]\s*(?:章|节|回|幕)?\s*[^\n]{0,40}))[^\n]*)/g;
 const DIALOGUE_PATTERN = /[“"]([^”"]{2,})[”"]/g;
@@ -358,11 +359,13 @@ export function convertNovelToScreenplay(payload = {}) {
 
   const warnings = validate(script);
   script.production_notes.adaptation_warnings = warnings;
+  const quality = buildQualityReport({ chapters, script, rawText: text });
 
   return {
     ok: true,
     yaml: toYaml({ script }),
     script,
+    quality,
     warnings,
     stats: {
       chapters: chapters.length,

@@ -207,7 +207,7 @@ textarea:focus {
 
 .result-strip {
   display: grid;
-  grid-template-columns: repeat(4, minmax(72px, 1fr)) 42px 42px;
+  grid-template-columns: repeat(4, minmax(64px, 1fr)) 42px 42px 42px;
   gap: 10px;
   padding: 14px;
   border-bottom: 1px solid var(--line);
@@ -254,6 +254,81 @@ textarea:focus {
   color: var(--warn);
   font-size: 13px;
   line-height: 1.6;
+}
+
+.quality-box {
+  margin: 12px 14px 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfa;
+  overflow: hidden;
+}
+
+.quality-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.quality-head strong {
+  font-size: 24px;
+  line-height: 1;
+  color: var(--accent-strong);
+}
+
+.quality-head span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.quality-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.quality-metrics span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.quality-metrics strong {
+  display: block;
+  margin-top: 2px;
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.quality-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 12px;
+}
+
+.quality-pill {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 4px 8px;
+  color: var(--muted);
+  background: #fff;
+  font-size: 12px;
+}
+
+.quality-pill.pass {
+  color: #126c63;
+  border-color: #bddbd5;
+  background: #e7f2ef;
+}
+
+.quality-pill.fail {
+  color: #8a4b00;
+  border-color: #f2d39a;
+  background: #fff4df;
 }
 
 .yaml-frame {
