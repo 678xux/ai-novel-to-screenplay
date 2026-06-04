@@ -38,6 +38,7 @@ const fileInput = document.querySelector("#fileInput");
 const analyzeBtn = document.querySelector("#analyzeBtn");
 const copyBtn = document.querySelector("#copyBtn");
 const downloadBtn = document.querySelector("#downloadBtn");
+const exportFormatInput = document.querySelector("#exportFormatInput");
 const clearBtn = document.querySelector("#clearBtn");
 const qualityBox = document.querySelector("#qualityBox");
 const qualityScore = document.querySelector("#qualityScore");
@@ -363,13 +364,38 @@ async function copyYaml() {
   }, 900);
 }
 
-function downloadYaml() {
-  if (!latestYaml) return;
-  const blob = new Blob([latestYaml], { type: "text/yaml;charset=utf-8" });
+async function downloadYaml() {
+  if (!latestYaml || !latestScript) return;
+  try {
+    downloadBtn.disabled = true;
+    await downloadExport(exportFormatInput.value);
+  } catch (error) {
+    setWarnings([error instanceof Error ? error.message : "导出失败"]);
+  } finally {
+    downloadBtn.disabled = false;
+  }
+}
+
+async function downloadExport(format) {
+  const response = await fetch("/api/export", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      format,
+      script: latestScript,
+      yaml: latestYaml
+    })
+  });
+  const data = await response.json();
+  if (!data.ok) throw new Error(data.error || "导出失败");
+
+  const blob = new Blob([data.content], { type: data.mime_type || "text/plain;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = `${titleInput.value || "screenplay"}.screenplay.yaml`;
+  anchor.download = data.filename || `${titleInput.value || "screenplay"}.screenplay.yaml`;
   document.body.append(anchor);
   anchor.click();
   anchor.remove();
@@ -386,6 +412,7 @@ function clearWorkspace() {
   yamlOutput.textContent = "等待转换...";
   renderOutline(null);
   fileInput.value = "";
+  exportFormatInput.value = "yaml";
   engineInput.value = "rules";
   setStats();
   setWarnings([]);

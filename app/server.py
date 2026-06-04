@@ -8,6 +8,7 @@ from urllib.parse import unquote, urlparse
 
 from .analyzer import analyze_novel_input
 from .ai_adapter import convert_novel_to_screenplay_optional_ai, get_public_ai_config
+from .exporter import export_screenplay
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 PUBLIC_DIR = ROOT_DIR / "public"
@@ -37,6 +38,13 @@ class AppHandler(BaseHTTPRequestHandler):
                 self.send_json(200, analyze_novel_input(self.read_json()))
             except Exception as exc:  # noqa: BLE001 - API returns user-facing errors.
                 self.send_json(400, {"ok": False, "error": str(exc) or "分析失败"})
+            return
+        if self.path == "/api/export":
+            try:
+                payload = self.read_json()
+                self.send_json(200, export_screenplay(payload.get("script"), payload.get("format", "yaml"), payload.get("yaml", "")))
+            except Exception as exc:  # noqa: BLE001 - API returns user-facing errors.
+                self.send_json(400, {"ok": False, "error": str(exc) or "导出失败"})
             return
         if self.path != "/api/convert":
             self.send_error(404)

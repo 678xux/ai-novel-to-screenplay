@@ -6,6 +6,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from app.analyzer import analyze_novel_input
 from app.ai_adapter import convert_novel_to_screenplay_optional_ai, get_public_ai_config
 from app.converter import convert_novel_to_screenplay, split_chapters
+from app.exporter import export_screenplay, sanitize_filename
 from app.schema import validate_screenplay_script
 
 
@@ -150,6 +151,22 @@ assert_true("script.acts[0].scenes[0].beats[0].type" in schema_errors[0]["path"]
 missing_required = {key: value for key, value in sample_result["script"].items() if key != "production_notes"}
 missing_errors = validate_screenplay_script(missing_required)
 assert_true(any(error["path"] == "script.production_notes" for error in missing_errors), "schema catches missing production notes")
+
+json_export = export_screenplay(sample_result["script"], "json")
+assert_true(json_export["filename"].endswith(".screenplay.json"), "json export filename")
+assert_true('"script"' in json_export["content"], "json export content")
+assert_true(json_export["mime_type"].startswith("application/json"), "json export mime")
+
+outline_export = export_screenplay(sample_result["script"], "outline_md")
+assert_true(outline_export["filename"].endswith(".outline.md"), "outline export filename")
+assert_true("# Fixture sample" in outline_export["content"], "outline export title")
+assert_true("## 角色" in outline_export["content"], "outline export characters")
+assert_true("###" in outline_export["content"], "outline export scenes")
+assert_true("[动作]" in outline_export["content"] or "[对白]" in outline_export["content"], "outline export beat labels")
+
+yaml_export = export_screenplay(sample_result["script"], "yaml", sample_result["yaml"])
+assert_true(yaml_export["content"] == sample_result["yaml"], "yaml export preserves generated yaml")
+assert_true(sanitize_filename("坏/文件 名?") == "坏_文件_名", "sanitize filename")
 
 sample_analysis = analyze_novel_input({"text": sample_text, "characters": "林澈，沈雾，周栩"})
 assert_true(sample_analysis["summary"]["chapter_count"] == 3, "analysis chapter count")
