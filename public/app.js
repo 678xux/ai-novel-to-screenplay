@@ -254,8 +254,22 @@ function renderOutline(script) {
   const characters = script.characters?.length
     ? `<section class="outline-section">
         <h3 class="outline-title">角色</h3>
-        <div class="outline-meta">
-          ${script.characters.map((character) => `<span class="outline-chip">${escapeHtml(character.name)} · ${escapeHtml(character.role || "角色")}</span>`).join("")}
+        <div class="character-list">
+          ${script.characters.map((character) => `
+            <div class="character-card">
+              <div class="character-head">
+                <strong>${escapeHtml(character.name)}</strong>
+                <span>${escapeHtml(character.role || "角色")}</span>
+              </div>
+              <div class="outline-grid">
+                <div class="outline-field"><span>目标</span><strong>${escapeHtml(character.goal || "待确认")}</strong></div>
+                <div class="outline-field"><span>弧光</span><strong>${escapeHtml(character.arc || "待补充")}</strong></div>
+              </div>
+              <div class="outline-meta">
+                <span class="outline-chip">首次：${escapeHtml(character.first_appearance || "待确认")}</span>
+                <span class="outline-chip">出场：${escapeHtml((character.appearances || []).length)} 场</span>
+              </div>
+            </div>`).join("")}
         </div>
       </section>`
     : "";
