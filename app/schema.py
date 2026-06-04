@@ -43,6 +43,9 @@ SCREENPLAY_SCHEMA = {
                         "time": "string",
                         "mood": "string",
                         "summary": "string",
+                        "objective": "string",
+                        "obstacle": "string",
+                        "outcome": "string",
                         "beats": [
                             {
                                 "id": "string",

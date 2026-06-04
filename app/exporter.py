@@ -80,6 +80,12 @@ def render_markdown_outline(script: dict[str, Any]) -> str:
             lines.extend([_list_line(item) for item in meta])
             if scene.get("summary"):
                 lines.append(_list_line(f"摘要：{scene['summary']}"))
+            if scene.get("objective"):
+                lines.append(_list_line(f"目标：{scene['objective']}"))
+            if scene.get("obstacle"):
+                lines.append(_list_line(f"阻碍：{scene['obstacle']}"))
+            if scene.get("outcome"):
+                lines.append(_list_line(f"结果：{scene['outcome']}"))
             if scene.get("conflict"):
                 lines.append(_list_line(f"冲突：{scene['conflict']}"))
             if scene.get("turning_point"):

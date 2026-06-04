@@ -200,6 +200,31 @@ def extract_props(text: str) -> list[str]:
     return props[:8]
 
 
+def infer_scene_objective(scene_text: str, chapter_title: str) -> str:
+    first_sentence = summarize(scene_text or chapter_title, 70)
+    if re.search(r"寻找|找到|追寻|调查|揭开|知道|确认|保护", scene_text):
+        return f"推动人物完成关键行动：{first_sentence}"
+    return f"推进“{chapter_title}”中的人物选择与信息揭示"
+
+
+def infer_scene_obstacle(scene_text: str, conflict: str) -> str:
+    if conflict and "需要二次打磨" not in conflict:
+        return conflict
+    if re.search(r"危险|追|逃|阻止|争执|威胁", scene_text):
+        return "外部压力阻碍角色达成目标"
+    if re.search(r"秘密|误会|隐瞒|不相信", scene_text):
+        return "信息不完整或互不信任造成阻碍"
+    return "阻碍需要编剧在二次打磨时明确"
+
+
+def infer_scene_outcome(scene_text: str, turning_point: str) -> str:
+    if turning_point and "待编剧确认" not in turning_point:
+        return turning_point
+    if re.search(r"决定|离开|出现|发现|揭开|终于", scene_text):
+        return summarize((re.search(r"[^。！？!?]*(?:决定|离开|出现|发现|揭开|终于)[^。！？!?]*", scene_text) or [scene_text])[0], 80)
+    return "本场结果需要人工确认，并连接下一场行动"
+
+
 def mode_hint_fields(mode: str, text: str, beat_type: str) -> dict:
     if mode == "short":
         return {"hook": "保留反转/悬念，适合短剧卡点"} if re.search(r"突然|发现|危险|秘密|决定|出现|揭开", text) else {"hook": "压缩信息，推进下一场"}
@@ -316,6 +341,8 @@ def chapter_to_scenes(chapter: dict, chapter_index: int, density: str, known_nam
     for scene_index, group in enumerate(split_scene_groups(paragraphs, density), start=1):
         scene_text = "\n".join(group)
         scene_id = f"scene_{chapter_index + 1:02d}_{scene_index:02d}"
+        conflict = summarize((re.search(r"[^。！？!?]*(?:冲突|争执|危险|秘密|误会|选择|背叛|阻止|追问)[^。！？!?]*", scene_text) or ["本场冲突需要二次打磨。"])[0], 80)
+        turning_point = summarize((re.search(r"[^。！？!?]*(?:突然|终于|决定|发现|转身|离开|出现|揭开)[^。！？!?]*", scene_text) or ["转折点待编剧确认。"])[0], 80)
         scenes.append(
             {
                 "id": scene_id,
@@ -325,9 +352,12 @@ def chapter_to_scenes(chapter: dict, chapter_index: int, density: str, known_nam
                 "time": pick_match(scene_text, TIME_PATTERN, "待定时间"),
                 "mood": infer_mood(scene_text),
                 "summary": summarize(scene_text or chapter["title"]),
+                "objective": infer_scene_objective(scene_text, chapter["title"]),
+                "obstacle": infer_scene_obstacle(scene_text, conflict),
+                "outcome": infer_scene_outcome(scene_text, turning_point),
                 "beats": create_beats(group, scene_id, known_names, mode),
-                "conflict": summarize((re.search(r"[^。！？!?]*(?:冲突|争执|危险|秘密|误会|选择|背叛|阻止|追问)[^。！？!?]*", scene_text) or ["本场冲突需要二次打磨。"])[0], 80),
-                "turning_point": summarize((re.search(r"[^。！？!?]*(?:突然|终于|决定|发现|转身|离开|出现|揭开)[^。！？!?]*", scene_text) or ["转折点待编剧确认。"])[0], 80),
+                "conflict": conflict,
+                "turning_point": turning_point,
                 "props": extract_props(scene_text),
                 "notes": ["由小说段落与场景边界线索自动拆分，建议人工校准场景边界。", mode_scene_note(mode)],
             }

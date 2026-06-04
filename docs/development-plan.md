@@ -86,6 +86,11 @@
    - 测试：三种模式都应通过 Schema 校验，并分别包含 `camera`、`hook`、`stage_direction`。
    - 目的：让界面中的模式选择真实影响剧本初稿，而不是只记录元数据。
 
+17. 场景目标/阻碍/结果
+   - 范围：Scene Schema 增加 `objective`、`obstacle`、`outcome`，并在 YAML、Markdown 和大纲视图中展示。
+   - 测试：转换结果应通过 Schema 校验，每个场景都应包含目标、阻碍和结果。
+   - 目的：帮助作者快速判断每场是否具备明确目标、冲突阻碍和结果推进。
+
 ## PR 描述模板
 
 ```md
