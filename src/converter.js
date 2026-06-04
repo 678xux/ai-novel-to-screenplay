@@ -269,7 +269,7 @@ function yamlScalar(value) {
   return JSON.stringify(text);
 }
 
-function toYaml(value, indent = 0) {
+export function toYaml(value, indent = 0) {
   const pad = " ".repeat(indent);
   if (Array.isArray(value)) {
     if (!value.length) return `${pad}[]`;
@@ -318,6 +318,27 @@ function validate(script) {
   return warnings;
 }
 
+export function buildConversionResult({ script, chapters, rawText, meta = {} }) {
+  const warnings = validate(script);
+  script.production_notes.adaptation_warnings = warnings;
+  const quality = buildQualityReport({ chapters, script, rawText });
+
+  return {
+    ok: true,
+    yaml: toYaml({ script }),
+    script,
+    quality,
+    warnings,
+    stats: {
+      chapters: script.source.chapter_count,
+      characters: script.characters.length,
+      scenes: script.acts.reduce((total, act) => total + act.scenes.length, 0),
+      beats: script.acts.reduce((total, act) => total + act.scenes.reduce((sceneTotal, scene) => sceneTotal + scene.beats.length, 0), 0)
+    },
+    meta
+  };
+}
+
 export function convertNovelToScreenplay(payload = {}) {
   const title = normalizeText(payload.title) || "未命名小说改编";
   const text = normalizeText(payload.text);
@@ -357,21 +378,12 @@ export function convertNovelToScreenplay(payload = {}) {
     }
   };
 
-  const warnings = validate(script);
-  script.production_notes.adaptation_warnings = warnings;
-  const quality = buildQualityReport({ chapters, script, rawText: text });
-
-  return {
-    ok: true,
-    yaml: toYaml({ script }),
+  return buildConversionResult({
     script,
-    quality,
-    warnings,
-    stats: {
-      chapters: chapters.length,
-      characters: characters.length,
-      scenes: script.acts.reduce((total, act) => total + act.scenes.length, 0),
-      beats: script.acts.reduce((total, act) => total + act.scenes.reduce((sceneTotal, scene) => sceneTotal + scene.beats.length, 0), 0)
+    chapters,
+    rawText: text,
+    meta: {
+      engine: "rules"
     }
-  };
+  });
 }
