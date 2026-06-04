@@ -9,6 +9,7 @@ from urllib.parse import unquote, urlparse
 from .analyzer import analyze_novel_input
 from .ai_adapter import convert_novel_to_screenplay_optional_ai, get_public_ai_config
 from .exporter import export_screenplay
+from .preprocessor import cleanup_novel_text
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 PUBLIC_DIR = ROOT_DIR / "public"
@@ -38,6 +39,12 @@ class AppHandler(BaseHTTPRequestHandler):
                 self.send_json(200, analyze_novel_input(self.read_json()))
             except Exception as exc:  # noqa: BLE001 - API returns user-facing errors.
                 self.send_json(400, {"ok": False, "error": str(exc) or "分析失败"})
+            return
+        if self.path == "/api/cleanup":
+            try:
+                self.send_json(200, cleanup_novel_text(self.read_json().get("text", "")))
+            except Exception as exc:  # noqa: BLE001 - API returns user-facing errors.
+                self.send_json(400, {"ok": False, "error": str(exc) or "清洗失败"})
             return
         if self.path == "/api/export":
             try:

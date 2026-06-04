@@ -7,6 +7,7 @@ from app.analyzer import analyze_novel_input
 from app.ai_adapter import convert_novel_to_screenplay_optional_ai, get_public_ai_config
 from app.converter import convert_novel_to_screenplay, split_chapters, split_scene_groups
 from app.exporter import export_screenplay, sanitize_filename
+from app.preprocessor import cleanup_novel_text
 from app.schema import validate_screenplay_script
 
 
@@ -217,5 +218,26 @@ assert_true(any("少于 3" in warning for warning in short_analysis["warnings"])
 untitled_analysis = analyze_novel_input({"text": "没有章节标题的正文。\n角色说：“这不够清楚。”"})
 assert_true(untitled_analysis["chapters"][0]["title"] == "未识别章节", "untitled chapter title")
 assert_true(any("未识别到明确章节标题" in warning for warning in untitled_analysis["warnings"]), "untitled warning")
+
+dirty_text = """最新网址：https://example.com
+----------------
+第一章 旧书页
+林青说：「先把线索收起来。」
+请收藏本站
+
+
+第二章 街道
+www.example.com
+夜晚，林青走进街道。
+
+第三章 车站
+返回目录
+黎明，阿禾终于抵达车站。"""
+cleaned = cleanup_novel_text(dirty_text)
+assert_true(cleaned["stats"]["removed_lines"] >= 4, "cleanup removes noise")
+assert_true("最新网址" not in cleaned["text"], "cleanup removes ad text")
+assert_true("https://" not in cleaned["text"], "cleanup removes url")
+assert_true("“先把线索收起来。”" in cleaned["text"], "cleanup normalizes quotes")
+assert_true(len(split_chapters(cleaned["text"])) == 3, "cleanup keeps chapter structure")
 
 print("Converter tests passed.")

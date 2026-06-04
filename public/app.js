@@ -35,6 +35,7 @@ const engineBox = document.querySelector("#engineBox");
 const convertBtn = document.querySelector("#convertBtn");
 const loadSampleBtn = document.querySelector("#loadSampleBtn");
 const fileInput = document.querySelector("#fileInput");
+const cleanupBtn = document.querySelector("#cleanupBtn");
 const analyzeBtn = document.querySelector("#analyzeBtn");
 const copyBtn = document.querySelector("#copyBtn");
 const downloadBtn = document.querySelector("#downloadBtn");
@@ -169,6 +170,40 @@ async function analyzeInput() {
   const data = await response.json();
   if (!data.ok) throw new Error(data.error || "分析失败");
   setAnalysis(data);
+}
+
+async function cleanupInput() {
+  if (!novelInput.value.trim()) {
+    setAnalysis();
+    return;
+  }
+
+  cleanupBtn.disabled = true;
+  try {
+    const response = await fetch("/api/cleanup", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        text: novelInput.value
+      })
+    });
+    const data = await response.json();
+    if (!data.ok) throw new Error(data.error || "清洗失败");
+    novelInput.value = data.text;
+    await analyzeInput();
+    const removed = data.stats?.removed_lines ?? 0;
+    const originalChars = data.stats?.original_chars ?? 0;
+    const cleanedChars = data.stats?.cleaned_chars ?? 0;
+    analysisWarnings.textContent = `已清洗文本：移除 ${removed} 行噪声，字数 ${originalChars} → ${cleanedChars}。`;
+    analysisWarnings.classList.add("show");
+  } catch (error) {
+    analysisWarnings.textContent = error instanceof Error ? error.message : "清洗失败";
+    analysisWarnings.classList.add("show");
+  } finally {
+    cleanupBtn.disabled = false;
+  }
 }
 
 function statusText(status) {
@@ -431,6 +466,7 @@ loadSampleBtn.addEventListener("click", () => {
 
 convertBtn.addEventListener("click", convert);
 fileInput.addEventListener("change", importNovelFile);
+cleanupBtn.addEventListener("click", cleanupInput);
 analyzeBtn.addEventListener("click", analyzeInput);
 copyBtn.addEventListener("click", copyYaml);
 downloadBtn.addEventListener("click", downloadYaml);
