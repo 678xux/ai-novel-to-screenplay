@@ -293,7 +293,9 @@ function renderOutline(script) {
             </div>
             <p class="outline-text">${escapeHtml(scene.summary)}</p>
             <div class="outline-grid">
-              <div class="outline-field"><span>冲突</span><strong>${escapeHtml(scene.conflict)}</strong></div>
+              <div class="outline-field"><span>目标</span><strong>${escapeHtml(scene.objective || "待确认")}</strong></div>
+              <div class="outline-field"><span>阻碍</span><strong>${escapeHtml(scene.obstacle || scene.conflict)}</strong></div>
+              <div class="outline-field"><span>结果</span><strong>${escapeHtml(scene.outcome || "待确认")}</strong></div>
               <div class="outline-field"><span>转折</span><strong>${escapeHtml(scene.turning_point)}</strong></div>
             </div>
             ${(scene.props || []).length ? `

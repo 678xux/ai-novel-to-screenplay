@@ -102,6 +102,9 @@ scenes:
     time: 清晨
     mood: 紧张
     summary: 林澈收到匿名信并决定前往旧灯塔。
+    objective: 推动人物完成关键行动：林澈收到匿名信并决定前往旧灯塔。
+    obstacle: 林澈必须在警告和真相之间做选择。
+    outcome: 售票亭电话响起，提示信不是给他的。
     beats: []
     conflict: 林澈必须在警告和真相之间做选择。
     turning_point: 售票亭电话响起，提示信不是给他的。
@@ -117,6 +120,7 @@ scenes:
 
 - `location` 与 `time` 对拍摄和舞台调度非常关键。
 - `summary` 让作者快速扫读整集结构。
+- `objective`、`obstacle`、`outcome` 对应场景目标、阻碍和结果，方便作者判断每场是否有明确戏剧推进。
 - `conflict` 与 `turning_point` 帮助作者判断场景是否有戏剧推进。
 - `props` 为后续分镜、拍摄计划和美术准备保留扩展空间。
 - `source_chapter` 保证改编结果能追溯回原文。
@@ -207,6 +211,9 @@ script:
           time: 清晨
           mood: 紧张
           summary: 林澈收到匿名信并决定前往旧灯塔。
+          objective: 推动人物完成关键行动：林澈收到匿名信并决定前往旧灯塔。
+          obstacle: 林澈必须在警告和真相之间做选择。
+          outcome: 售票亭电话响起，提示信不是给他的。
           beats:
             - id: scene_01_01_beat_01
               type: action
