@@ -296,6 +296,13 @@ function renderOutline(script) {
               <div class="outline-field"><span>冲突</span><strong>${escapeHtml(scene.conflict)}</strong></div>
               <div class="outline-field"><span>转折</span><strong>${escapeHtml(scene.turning_point)}</strong></div>
             </div>
+            ${(scene.props || []).length ? `
+              <div class="outline-props">
+                <span>道具/线索</span>
+                <div class="outline-meta">
+                  ${scene.props.map((prop) => `<span class="outline-chip">${escapeHtml(prop)}</span>`).join("")}
+                </div>
+              </div>` : ""}
             <div class="beat-list">
               ${(scene.beats || []).slice(0, 8).map((beat) => `
                 <div class="beat-item">

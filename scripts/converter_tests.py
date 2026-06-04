@@ -164,6 +164,8 @@ assert_true([character["name"] for character in sample_result["script"]["charact
 assert_true(all(character["goal"] for character in sample_result["script"]["characters"]), "fixture character goals")
 assert_true(all(character["arc"] for character in sample_result["script"]["characters"]), "fixture character arcs")
 assert_true(any(character["appearances"] for character in sample_result["script"]["characters"]), "fixture character appearances")
+sample_props = {prop for act in sample_result["script"]["acts"] for scene in act["scenes"] for prop in scene["props"]}
+assert_true({"匿名信", "钥匙", "名单"} & sample_props, "fixture props extracted")
 assert_true(validate_screenplay_script(sample_result["script"]) == [], "fixture sample schema validation")
 
 broken_script = {
@@ -204,6 +206,7 @@ assert_true("# Fixture sample" in outline_export["content"], "outline export tit
 assert_true("## 角色" in outline_export["content"], "outline export characters")
 assert_true("###" in outline_export["content"], "outline export scenes")
 assert_true("[动作]" in outline_export["content"] or "[对白]" in outline_export["content"], "outline export beat labels")
+assert_true("道具/线索" in outline_export["content"], "outline export props")
 
 yaml_export = export_screenplay(sample_result["script"], "yaml", sample_result["yaml"])
 assert_true(yaml_export["content"] == sample_result["yaml"], "yaml export preserves generated yaml")

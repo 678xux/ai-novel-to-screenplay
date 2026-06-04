@@ -20,6 +20,7 @@ EMOTION_PATTERN = re.compile(r"(愤怒|惊讶|沉默|犹豫|恐惧|紧张|温柔
 SCENE_SHIFT_PATTERN = re.compile(r"(来到|走进|进入|离开|转身|推开|穿过|回到|赶到|抵达|门外|窗前|走廊|街道|车站|码头|城门|办公室|医院|学校)")
 TURNING_PATTERN = re.compile(r"(突然|终于|此时|与此同时|没想到|下一刻|决定|发现|揭开|出现|消失|响起|冲进|追上|停下)")
 CONFLICT_PATTERN = re.compile(r"(冲突|争执|危险|秘密|误会|选择|背叛|阻止|追问|威胁|逃|追|杀|爆炸|尖叫|枪|刀)")
+PROP_PATTERN = re.compile(r"(匿名信|信纸|信|钥匙|名单|录音笔|录音|档案|照片|地图|符号|手机|电话|戒指|项链|刀|枪|伞|药瓶|票据|日记|合同|令牌|玉佩)")
 
 NON_NAME_PHRASES = {
     "压低声音",
@@ -186,6 +187,19 @@ def summarize(text: str, max_length: int = 92) -> str:
     return first if len(first) <= max_length else f"{first[: max_length - 1]}…"
 
 
+def extract_props(text: str) -> list[str]:
+    props = []
+    for match in PROP_PATTERN.finditer(text):
+        prop = match.group(1)
+        if prop == "信" and any(item in props for item in ("匿名信", "信纸")):
+            continue
+        if prop == "录音" and "录音笔" in props:
+            continue
+        if prop not in props:
+            props.append(prop)
+    return props[:8]
+
+
 def create_beats(paragraphs: list[str], scene_id: str, known_names: list[str] | None = None) -> list[dict]:
     known_names = known_names or []
     beats = []
@@ -293,7 +307,7 @@ def chapter_to_scenes(chapter: dict, chapter_index: int, density: str, known_nam
                 "beats": create_beats(group, scene_id, known_names),
                 "conflict": summarize((re.search(r"[^。！？!?]*(?:冲突|争执|危险|秘密|误会|选择|背叛|阻止|追问)[^。！？!?]*", scene_text) or ["本场冲突需要二次打磨。"])[0], 80),
                 "turning_point": summarize((re.search(r"[^。！？!?]*(?:突然|终于|决定|发现|转身|离开|出现|揭开)[^。！？!?]*", scene_text) or ["转折点待编剧确认。"])[0], 80),
-                "props": [],
+                "props": extract_props(scene_text),
                 "notes": ["由小说段落与场景边界线索自动拆分，建议人工校准场景边界。"],
             }
         )

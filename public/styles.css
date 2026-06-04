@@ -590,6 +590,17 @@ textarea:focus {
   line-height: 1.45;
 }
 
+.outline-props {
+  margin-top: 8px;
+}
+
+.outline-props > span {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .beat-list {
   margin-top: 8px;
   border: 1px solid var(--line);
