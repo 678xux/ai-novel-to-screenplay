@@ -241,6 +241,13 @@ textarea:focus {
   font-size: 14px;
 }
 
+.analysis-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 .analysis-summary {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
