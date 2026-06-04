@@ -68,6 +68,8 @@ def render_markdown_outline(script: dict[str, Any]) -> str:
         lines.extend([f"## {act.get('title') or act.get('id') or '未命名幕'}", ""])
         if act.get("purpose"):
             lines.extend([f"**结构功能：** {act['purpose']}", ""])
+        if act.get("estimated_runtime_minutes"):
+            lines.extend([f"**预计时长：** {act['estimated_runtime_minutes']} 分钟", ""])
         for scene in act.get("scenes") or []:
             scene_title = scene.get("title") or scene.get("id") or "未命名场景"
             lines.extend([f"### {scene_title}", ""])
@@ -77,6 +79,8 @@ def render_markdown_outline(script: dict[str, Any]) -> str:
                 f"情绪：{scene.get('mood') or '待定'}",
                 f"来源：{scene.get('source_chapter') or '待定'}",
             ]
+            if scene.get("estimated_runtime_minutes"):
+                meta.append(f"预计时长：{scene['estimated_runtime_minutes']} 分钟")
             lines.extend([_list_line(item) for item in meta])
             if scene.get("summary"):
                 lines.append(_list_line(f"摘要：{scene['summary']}"))
@@ -101,7 +105,23 @@ def render_markdown_outline(script: dict[str, Any]) -> str:
                     lines.append(_list_line(f"[{beat_type}] {speaker}{beat.get('text', '')}", 2))
             lines.append("")
 
-    notes = (script.get("production_notes") or {}).get("revision_suggestions") or []
+    production_notes = script.get("production_notes") or {}
+    runtime_plan = production_notes.get("runtime_plan") or {}
+    if production_notes.get("estimated_runtime_minutes") or runtime_plan:
+        lines.append("## 篇幅规划")
+        if production_notes.get("estimated_runtime_minutes"):
+            lines.append(_list_line(f"总预计时长：{production_notes['estimated_runtime_minutes']} 分钟"))
+        if runtime_plan.get("average_scene_minutes"):
+            lines.append(_list_line(f"平均场景时长：{runtime_plan['average_scene_minutes']} 分钟"))
+        if runtime_plan.get("shortest_scene_minutes") or runtime_plan.get("longest_scene_minutes"):
+            lines.append(_list_line(f"场景时长范围：{runtime_plan.get('shortest_scene_minutes', 0)} - {runtime_plan.get('longest_scene_minutes', 0)} 分钟"))
+        if runtime_plan.get("pacing"):
+            lines.append(_list_line(f"节奏判断：{runtime_plan['pacing']}"))
+        for note in runtime_plan.get("notes") or []:
+            lines.append(_list_line(str(note)))
+        lines.append("")
+
+    notes = production_notes.get("revision_suggestions") or []
     if notes:
         lines.append("## 修改建议")
         lines.extend(_list_line(str(note)) for note in notes)

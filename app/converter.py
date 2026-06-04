@@ -200,6 +200,10 @@ def extract_props(text: str) -> list[str]:
     return props[:8]
 
 
+def compact_text_length(text: str = "") -> int:
+    return len("".join(str(text).split()))
+
+
 def infer_scene_objective(scene_text: str, chapter_title: str) -> str:
     first_sentence = summarize(scene_text or chapter_title, 70)
     if re.search(r"寻找|找到|追寻|调查|揭开|知道|确认|保护", scene_text):
@@ -279,6 +283,56 @@ def create_beats(paragraphs: list[str], scene_id: str, known_names: list[str] | 
     return beats[:12]
 
 
+def runtime_weights(mode: str) -> dict[str, float]:
+    if mode == "short":
+        return {
+            "base": 0.35,
+            "action": 0.18,
+            "dialogue": 0.15,
+            "narration": 0.12,
+            "transition": 0.08,
+            "chars_per_minute": 460,
+        }
+    if mode == "stage":
+        return {
+            "base": 1.0,
+            "action": 0.45,
+            "dialogue": 0.38,
+            "narration": 0.3,
+            "transition": 0.16,
+            "chars_per_minute": 280,
+        }
+    return {
+        "base": 0.75,
+        "action": 0.32,
+        "dialogue": 0.28,
+        "narration": 0.22,
+        "transition": 0.12,
+        "chars_per_minute": 350,
+    }
+
+
+def runtime_density_multiplier(density: str) -> float:
+    if density == "compact":
+        return 0.9
+    if density == "detailed":
+        return 1.05
+    return 1.0
+
+
+def round_runtime(value: float) -> float:
+    rounded = round(value, 1)
+    return int(rounded) if rounded.is_integer() else rounded
+
+
+def estimate_scene_runtime_minutes(scene_text: str, beats: list[dict], mode: str = "drama", density: str = "balanced") -> float:
+    weights = runtime_weights(mode)
+    beat_minutes = sum(weights.get(str(beat.get("type") or "action"), weights["action"]) for beat in beats)
+    text_minutes = compact_text_length(scene_text) / weights["chars_per_minute"]
+    estimated = (weights["base"] + beat_minutes + min(text_minutes, 2.4)) * runtime_density_multiplier(density)
+    return round_runtime(max(0.5, estimated))
+
+
 def scene_density_limits(density: str) -> tuple[int, int]:
     if density == "detailed":
         return 2, 4
@@ -343,6 +397,7 @@ def chapter_to_scenes(chapter: dict, chapter_index: int, density: str, known_nam
         scene_id = f"scene_{chapter_index + 1:02d}_{scene_index:02d}"
         conflict = summarize((re.search(r"[^。！？!?]*(?:冲突|争执|危险|秘密|误会|选择|背叛|阻止|追问)[^。！？!?]*", scene_text) or ["本场冲突需要二次打磨。"])[0], 80)
         turning_point = summarize((re.search(r"[^。！？!?]*(?:突然|终于|决定|发现|转身|离开|出现|揭开)[^。！？!?]*", scene_text) or ["转折点待编剧确认。"])[0], 80)
+        beats = create_beats(group, scene_id, known_names, mode)
         scenes.append(
             {
                 "id": scene_id,
@@ -352,10 +407,11 @@ def chapter_to_scenes(chapter: dict, chapter_index: int, density: str, known_nam
                 "time": pick_match(scene_text, TIME_PATTERN, "待定时间"),
                 "mood": infer_mood(scene_text),
                 "summary": summarize(scene_text or chapter["title"]),
+                "estimated_runtime_minutes": estimate_scene_runtime_minutes(scene_text, beats, mode, density),
                 "objective": infer_scene_objective(scene_text, chapter["title"]),
                 "obstacle": infer_scene_obstacle(scene_text, conflict),
                 "outcome": infer_scene_outcome(scene_text, turning_point),
-                "beats": create_beats(group, scene_id, known_names, mode),
+                "beats": beats,
                 "conflict": conflict,
                 "turning_point": turning_point,
                 "props": extract_props(scene_text),
@@ -369,13 +425,15 @@ def build_acts(chapters: list[dict], density: str, known_names: list[str], mode:
     acts = []
     for index, chapter in enumerate(chapters):
         purpose = "建立人物、世界观与核心矛盾" if index == 0 else "推进高潮并留下后续打磨空间" if index == len(chapters) - 1 else "升级冲突并推动人物选择"
+        scenes = chapter_to_scenes(chapter, index, density, known_names, mode)
         acts.append(
             {
                 "id": f"act_{index + 1:02d}",
                 "title": chapter["title"],
                 "source_chapters": [chapter["title"]],
                 "purpose": purpose,
-                "scenes": chapter_to_scenes(chapter, index, density, known_names, mode),
+                "estimated_runtime_minutes": round_runtime(sum(float(scene.get("estimated_runtime_minutes") or 0) for scene in scenes)),
+                "scenes": scenes,
             }
         )
     return acts
@@ -433,6 +491,82 @@ def mode_revision_suggestions(mode: str) -> list[str]:
     if mode == "stage":
         return common + ["补充舞台空间、灯光变化、演员走位和上下场调度。"]
     return common + ["补充镜头景别、场面调度和可视化动作细节。"]
+
+
+def runtime_pacing_label(mode: str, average_scene_minutes: float) -> str:
+    if mode == "short":
+        if average_scene_minutes > 1.6:
+            return "短剧节奏偏长，建议压缩铺垫并强化场尾钩子。"
+        return "短剧节奏紧凑，适合按强情节点推进。"
+    if mode == "stage":
+        if average_scene_minutes < 1.6:
+            return "舞台段落偏短，建议合并相近场景以保留表演停顿。"
+        return "舞台节奏较完整，可继续补充走位和灯光变化。"
+    if average_scene_minutes < 1.2:
+        return "场景偏碎，适合合并相邻信息场。"
+    if average_scene_minutes > 3.5:
+        return "场景偏长，建议拆出新的地点、时间或冲突转折。"
+    return "场景时长较均衡，适合作为剧本初稿继续打磨。"
+
+
+def runtime_revision_notes(mode: str, density: str, average_scene_minutes: float) -> list[str]:
+    notes = ["根据节拍数量、对白/动作类型和文本体量估算时长，提交前仍需人工朗读校准。"]
+    if density == "compact":
+        notes.append("紧凑密度会压缩场景数量，适合先得到总览版剧本。")
+    elif density == "detailed":
+        notes.append("细分密度会生成更多短场景，适合进一步拆分分镜或舞台调度。")
+    if mode == "short":
+        notes.append("短剧模式建议每 1 分钟左右出现一次明确钩子或反转。")
+    elif mode == "stage":
+        notes.append("舞台剧模式需额外预留换景、停顿和上下场时间。")
+    elif average_scene_minutes > 3.5:
+        notes.append("部分影视场景时长较长，可按地点变化或冲突升级继续拆分。")
+    return notes
+
+
+def build_runtime_plan(acts: list[dict], mode: str, density: str) -> dict:
+    scene_minutes = [
+        float(scene.get("estimated_runtime_minutes") or 0)
+        for act in acts
+        for scene in act.get("scenes", [])
+        if float(scene.get("estimated_runtime_minutes") or 0) > 0
+    ]
+    if not scene_minutes:
+        return {
+            "average_scene_minutes": 0,
+            "shortest_scene_minutes": 0,
+            "longest_scene_minutes": 0,
+            "pacing": "尚未形成可估算的场景节奏。",
+            "notes": ["补充章节正文后再进行时长估算。"],
+        }
+
+    average_scene_minutes = round_runtime(sum(scene_minutes) / len(scene_minutes))
+    return {
+        "average_scene_minutes": average_scene_minutes,
+        "shortest_scene_minutes": round_runtime(min(scene_minutes)),
+        "longest_scene_minutes": round_runtime(max(scene_minutes)),
+        "pacing": runtime_pacing_label(mode, float(average_scene_minutes)),
+        "notes": runtime_revision_notes(mode, density, float(average_scene_minutes)),
+    }
+
+
+def ensure_runtime_plan(script: dict, mode: str = "drama", density: str = "balanced") -> dict:
+    acts = script.get("acts") or []
+    for act in acts:
+        for scene in act.get("scenes", []) or []:
+            runtime = scene.get("estimated_runtime_minutes")
+            if not isinstance(runtime, (int, float)) or isinstance(runtime, bool) or runtime <= 0:
+                scene_text = "\n".join(str(beat.get("text", "")) for beat in scene.get("beats", []))
+                scene["estimated_runtime_minutes"] = estimate_scene_runtime_minutes(scene_text or scene.get("summary", ""), scene.get("beats", []), mode, density)
+        act["estimated_runtime_minutes"] = round_runtime(
+            sum(float(scene.get("estimated_runtime_minutes") or 0) for scene in act.get("scenes", []) or [])
+        )
+
+    production_notes = script.setdefault("production_notes", {})
+    total_runtime = round_runtime(sum(float(act.get("estimated_runtime_minutes") or 0) for act in acts))
+    production_notes["estimated_runtime_minutes"] = total_runtime
+    production_notes["runtime_plan"] = build_runtime_plan(acts, mode, density)
+    return script
 
 
 def yaml_scalar(value: Any) -> str:
@@ -494,6 +628,10 @@ def validate(script: dict) -> list[str]:
 
 
 def build_conversion_result(script: dict, chapters: list[dict], raw_text: str, meta: dict | None = None) -> dict:
+    source = script.get("source") if isinstance(script.get("source"), dict) else {}
+    mode = source.get("adaptation_mode") or (meta or {}).get("mode") or "drama"
+    density = (meta or {}).get("density") or "balanced"
+    ensure_runtime_plan(script, mode, density)
     warnings = validate(script)
     script["production_notes"]["adaptation_warnings"] = warnings
     quality = build_quality_report(chapters, script, raw_text)
@@ -542,9 +680,10 @@ def convert_novel_to_screenplay(payload: dict | None = None) -> dict:
         "characters": characters,
         "acts": acts,
         "production_notes": {
-            "estimated_runtime_minutes": max(8, round(len(chapters) * (9 if density == "detailed" else 4 if density == "compact" else 6))),
+            "estimated_runtime_minutes": 0,
+            "runtime_plan": build_runtime_plan(acts, mode, density),
             "adaptation_warnings": [],
             "revision_suggestions": mode_revision_suggestions(mode),
         },
     }
-    return build_conversion_result(script, chapters, text, {"engine": "rules"})
+    return build_conversion_result(script, chapters, text, {"engine": "rules", "density": density, "mode": mode})

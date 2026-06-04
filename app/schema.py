@@ -34,6 +34,7 @@ SCREENPLAY_SCHEMA = {
                 "title": "string",
                 "source_chapters": ["string"],
                 "purpose": "string",
+                "estimated_runtime_minutes": "number",
                 "scenes": [
                     {
                         "id": "string",
@@ -43,6 +44,7 @@ SCREENPLAY_SCHEMA = {
                         "time": "string",
                         "mood": "string",
                         "summary": "string",
+                        "estimated_runtime_minutes": "number",
                         "objective": "string",
                         "obstacle": "string",
                         "outcome": "string",
@@ -68,6 +70,13 @@ SCREENPLAY_SCHEMA = {
         ],
         "production_notes": {
             "estimated_runtime_minutes": "number",
+            "runtime_plan": {
+                "average_scene_minutes": "number",
+                "shortest_scene_minutes": "number",
+                "longest_scene_minutes": "number",
+                "pacing": "string",
+                "notes": ["string"],
+            },
             "adaptation_warnings": ["string"],
             "revision_suggestions": ["string"],
         },

@@ -5,7 +5,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from app.analyzer import analyze_novel_input
 from app.ai_adapter import convert_novel_to_screenplay_optional_ai, get_public_ai_config
-from app.converter import convert_novel_to_screenplay, split_chapters, split_scene_groups
+from app.converter import convert_novel_to_screenplay, estimate_scene_runtime_minutes, split_chapters, split_scene_groups
 from app.exporter import export_screenplay, sanitize_filename
 from app.preprocessor import cleanup_novel_text
 from app.schema import validate_screenplay_script
@@ -115,6 +115,11 @@ long_balanced = convert_novel_to_screenplay({"title": "Long split", "text": long
 long_compact = convert_novel_to_screenplay({"title": "Long split", "text": long_scene_text, "characters": "林青，阿禾", "density": "compact"})
 assert_true(long_balanced["stats"]["scenes"] > long_balanced["stats"]["chapters"], "long text creates extra scenes")
 assert_true(long_balanced["stats"]["scenes"] >= long_compact["stats"]["scenes"], "density affects integrated scene count")
+assert_true(
+    long_balanced["script"]["production_notes"]["estimated_runtime_minutes"] >= long_compact["script"]["production_notes"]["estimated_runtime_minutes"],
+    "density affects runtime plan",
+)
+assert_true(estimate_scene_runtime_minutes("林青说：“走。”", [{"type": "dialogue", "text": "走。"}], "stage") > 0, "runtime estimate helper")
 
 mode_results = {
     mode: convert_novel_to_screenplay({"title": f"Mode {mode}", "text": long_scene_text, "characters": "林青，阿禾", "mode": mode})
@@ -186,6 +191,11 @@ sample_scenes = [scene for act in sample_result["script"]["acts"] for scene in a
 assert_true(all(scene["objective"] for scene in sample_scenes), "fixture scene objectives")
 assert_true(all(scene["obstacle"] for scene in sample_scenes), "fixture scene obstacles")
 assert_true(all(scene["outcome"] for scene in sample_scenes), "fixture scene outcomes")
+assert_true(all(scene["estimated_runtime_minutes"] > 0 for scene in sample_scenes), "fixture scene runtime estimates")
+assert_true(all(act["estimated_runtime_minutes"] > 0 for act in sample_result["script"]["acts"]), "fixture act runtime estimates")
+assert_true(sample_result["script"]["production_notes"]["estimated_runtime_minutes"] > 0, "fixture total runtime estimate")
+assert_true(sample_result["script"]["production_notes"]["runtime_plan"]["average_scene_minutes"] > 0, "fixture runtime plan")
+assert_true(sample_result["quality"]["metrics"]["estimated_runtime_minutes"] > 0, "fixture quality runtime metric")
 assert_true(validate_screenplay_script(sample_result["script"]) == [], "fixture sample schema validation")
 
 broken_script = {
@@ -228,9 +238,11 @@ assert_true("###" in outline_export["content"], "outline export scenes")
 assert_true("[动作]" in outline_export["content"] or "[对白]" in outline_export["content"], "outline export beat labels")
 assert_true("道具/线索" in outline_export["content"], "outline export props")
 assert_true("目标：" in outline_export["content"] and "阻碍：" in outline_export["content"] and "结果：" in outline_export["content"], "outline export scene objective fields")
+assert_true("篇幅规划" in outline_export["content"] and "预计时长" in outline_export["content"], "outline export runtime plan")
 
 yaml_export = export_screenplay(sample_result["script"], "yaml", sample_result["yaml"])
 assert_true(yaml_export["content"] == sample_result["yaml"], "yaml export preserves generated yaml")
+assert_true("runtime_plan:" in yaml_export["content"], "yaml export runtime plan")
 assert_true(sanitize_filename("坏/文件 名?") == "坏_文件_名", "sanitize filename")
 
 sample_analysis = analyze_novel_input({"text": sample_text, "characters": "林澈，沈雾，周栩"})
