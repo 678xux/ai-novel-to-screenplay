@@ -119,6 +119,15 @@ button.secondary:hover,
   pointer-events: none;
 }
 
+.sr-only {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
 .workspace {
   display: grid;
   grid-template-columns: minmax(420px, 0.9fr) minmax(520px, 1.1fr);
@@ -287,7 +296,7 @@ textarea:focus {
 
 .result-strip {
   display: grid;
-  grid-template-columns: repeat(4, minmax(64px, 1fr)) 42px 42px 42px;
+  grid-template-columns: repeat(4, minmax(54px, 1fr)) 42px minmax(76px, 0.75fr) 42px 42px;
   gap: 10px;
   padding: 14px;
   border-bottom: 1px solid var(--line);
@@ -323,6 +332,21 @@ textarea:focus {
   background: var(--accent-soft);
   border: 1px solid #bddbd5;
   font-size: 20px;
+}
+
+.export-select {
+  display: block;
+  min-width: 0;
+  height: 50px;
+}
+
+.export-select select {
+  height: 50px;
+  min-height: 50px;
+  color: var(--accent-strong);
+  border-color: #bddbd5;
+  background: var(--accent-soft);
+  font-weight: 700;
 }
 
 .warning-box,

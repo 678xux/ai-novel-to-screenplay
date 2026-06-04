@@ -108,7 +108,15 @@
           <button id="copyBtn" class="icon-btn" type="button" title="复制 YAML" aria-label="复制 YAML">
             ⧉
           </button>
-          <button id="downloadBtn" class="icon-btn" type="button" title="下载 YAML" aria-label="下载 YAML">
+          <label class="export-select" title="选择导出格式">
+            <span class="sr-only">导出格式</span>
+            <select id="exportFormatInput" aria-label="导出格式">
+              <option value="yaml">YAML</option>
+              <option value="json">JSON</option>
+              <option value="outline_md">大纲</option>
+            </select>
+          </label>
+          <button id="downloadBtn" class="icon-btn" type="button" title="下载导出文件" aria-label="下载导出文件">
             ⇩
           </button>
           <button id="clearBtn" class="icon-btn" type="button" title="清空输入" aria-label="清空输入">

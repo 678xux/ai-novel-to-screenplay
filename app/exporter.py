@@ -1,0 +1,127 @@
+from __future__ import annotations
+
+import json
+import re
+from typing import Any
+
+from .converter import to_yaml
+
+EXPORT_FORMATS = {
+    "yaml": {
+        "extension": "screenplay.yaml",
+        "mime_type": "text/yaml;charset=utf-8",
+    },
+    "json": {
+        "extension": "screenplay.json",
+        "mime_type": "application/json;charset=utf-8",
+    },
+    "outline_md": {
+        "extension": "outline.md",
+        "mime_type": "text/markdown;charset=utf-8",
+    },
+}
+
+
+def sanitize_filename(value: str = "") -> str:
+    clean = re.sub(r'[\\/:*?"<>|\s]+', "_", str(value or "").strip())
+    clean = clean.strip("._")
+    return clean[:80] or "screenplay"
+
+
+def _list_line(value: str, indent: int = 0) -> str:
+    return f"{' ' * indent}- {value}"
+
+
+def beat_type_label(value: str = "") -> str:
+    labels = {
+        "action": "动作",
+        "dialogue": "对白",
+        "narration": "旁白",
+        "transition": "转场",
+    }
+    return labels.get(value, value or "节拍")
+
+
+def render_markdown_outline(script: dict[str, Any]) -> str:
+    title = script.get("title") or "未命名剧本"
+    lines = [f"# {title}", ""]
+
+    if script.get("logline"):
+        lines.extend(["## 故事梗概", str(script["logline"]), ""])
+
+    themes = script.get("themes") or []
+    if themes:
+        lines.append("## 主题")
+        lines.extend(_list_line(str(theme)) for theme in themes)
+        lines.append("")
+
+    characters = script.get("characters") or []
+    if characters:
+        lines.append("## 角色")
+        for character in characters:
+            role = character.get("role") or "角色"
+            first = character.get("first_appearance") or "待确认"
+            lines.append(_list_line(f"{character.get('name', '未命名角色')}：{role}，首次出现：{first}"))
+        lines.append("")
+
+    for act in script.get("acts") or []:
+        lines.extend([f"## {act.get('title') or act.get('id') or '未命名幕'}", ""])
+        if act.get("purpose"):
+            lines.extend([f"**结构功能：** {act['purpose']}", ""])
+        for scene in act.get("scenes") or []:
+            scene_title = scene.get("title") or scene.get("id") or "未命名场景"
+            lines.extend([f"### {scene_title}", ""])
+            meta = [
+                f"地点：{scene.get('location') or '待定'}",
+                f"时间：{scene.get('time') or '待定'}",
+                f"情绪：{scene.get('mood') or '待定'}",
+                f"来源：{scene.get('source_chapter') or '待定'}",
+            ]
+            lines.extend([_list_line(item) for item in meta])
+            if scene.get("summary"):
+                lines.append(_list_line(f"摘要：{scene['summary']}"))
+            if scene.get("conflict"):
+                lines.append(_list_line(f"冲突：{scene['conflict']}"))
+            if scene.get("turning_point"):
+                lines.append(_list_line(f"转折：{scene['turning_point']}"))
+            beats = scene.get("beats") or []
+            if beats:
+                lines.append(_list_line("节拍："))
+                for beat in beats[:12]:
+                    beat_type = beat_type_label(beat.get("type"))
+                    speaker = f"{beat.get('speaker')}：" if beat.get("speaker") else ""
+                    lines.append(_list_line(f"[{beat_type}] {speaker}{beat.get('text', '')}", 2))
+            lines.append("")
+
+    notes = (script.get("production_notes") or {}).get("revision_suggestions") or []
+    if notes:
+        lines.append("## 修改建议")
+        lines.extend(_list_line(str(note)) for note in notes)
+        lines.append("")
+
+    return "\n".join(lines).strip() + "\n"
+
+
+def export_screenplay(script: dict[str, Any], export_format: str = "yaml", yaml_text: str = "") -> dict:
+    if export_format not in EXPORT_FORMATS:
+        raise ValueError("不支持的导出格式。")
+    if not isinstance(script, dict) or not script:
+        raise ValueError("请先完成转换，再导出剧本。")
+
+    title = sanitize_filename(script.get("title") or "screenplay")
+    config = EXPORT_FORMATS[export_format]
+
+    if export_format == "yaml":
+        content = yaml_text or to_yaml({"script": script})
+    elif export_format == "json":
+        content = json.dumps({"script": script}, ensure_ascii=False, indent=2)
+    else:
+        content = render_markdown_outline(script)
+
+    return {
+        "ok": True,
+        "format": export_format,
+        "filename": f"{title}.{config['extension']}",
+        "mime_type": config["mime_type"],
+        "content": content,
+    }
