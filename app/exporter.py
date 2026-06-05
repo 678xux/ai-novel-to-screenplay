@@ -128,6 +128,19 @@ def render_markdown_outline(script: dict[str, Any]) -> str:
                 lines.append(_list_line(extra, 2))
         lines.append("")
 
+    revision_tasks = production_notes.get("revision_tasks") or []
+    if revision_tasks:
+        lines.append("## 修订任务")
+        for task in revision_tasks:
+            scene_ids = "、".join(str(scene_id) for scene_id in task.get("target_scene_ids", [])) or "全局"
+            title = task.get("title") or task.get("id") or "未命名任务"
+            lines.append(_list_line(f"{title}：{task.get('priority', 'medium')} / {task.get('category', 'general')}，范围：{scene_ids}"))
+            if task.get("reason"):
+                lines.append(_list_line(f"原因：{task['reason']}", 2))
+            if task.get("action"):
+                lines.append(_list_line(f"动作：{task['action']}", 2))
+        lines.append("")
+
     runtime_plan = production_notes.get("runtime_plan") or {}
     if production_notes.get("estimated_runtime_minutes") or runtime_plan:
         lines.append("## 篇幅规划")

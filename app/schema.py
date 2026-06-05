@@ -90,6 +90,18 @@ SCREENPLAY_SCHEMA = {
                     "coverage_note": "string",
                 }
             ],
+            "revision_tasks": [
+                {
+                    "id": "string",
+                    "priority": "high | medium | low",
+                    "category": "string",
+                    "title": "string",
+                    "target_scene_ids": ["string"],
+                    "reason": "string",
+                    "action": "string",
+                    "status": "todo | doing | done",
+                }
+            ],
             "adaptation_warnings": ["string"],
             "revision_suggestions": ["string"],
         },

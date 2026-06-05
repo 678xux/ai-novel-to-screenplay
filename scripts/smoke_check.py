@@ -23,6 +23,7 @@ required_fragments = [
     "scenes:",
     "beats:",
     "characters:",
+    "revision_tasks:",
 ]
 missing = [fragment for fragment in required_fragments if fragment not in result["yaml"]]
 if missing:

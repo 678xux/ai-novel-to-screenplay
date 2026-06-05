@@ -201,8 +201,14 @@ assert_true(len(sample_coverage) == 3, "fixture source coverage count")
 assert_true(all(item["covered"] for item in sample_coverage), "fixture source coverage covered")
 assert_true(all(item["scene_count"] >= 1 and item["beat_count"] >= 1 for item in sample_coverage), "fixture source coverage structure")
 assert_true(any(item["character_names"] for item in sample_coverage), "fixture source coverage characters")
+sample_tasks = sample_result["script"]["production_notes"]["revision_tasks"]
+assert_true(len(sample_tasks) >= 1, "fixture revision tasks count")
+assert_true(all(task["status"] == "todo" for task in sample_tasks), "fixture revision tasks status")
+assert_true(any(task["priority"] == "high" for task in sample_tasks), "fixture revision tasks priority")
+assert_true(any(task["target_scene_ids"] for task in sample_tasks), "fixture revision tasks scene targets")
 assert_true(sample_result["quality"]["metrics"]["estimated_runtime_minutes"] > 0, "fixture quality runtime metric")
 assert_true(sample_result["quality"]["metrics"]["source_coverage_rate"] == 100, "fixture quality source coverage metric")
+assert_true(sample_result["quality"]["metrics"]["revision_task_count"] == len(sample_tasks), "fixture quality revision task metric")
 assert_true(validate_screenplay_script(sample_result["script"]) == [], "fixture sample schema validation")
 
 sample_chapters = split_chapters(sample_text)
@@ -263,11 +269,13 @@ assert_true("道具/线索" in outline_export["content"], "outline export props"
 assert_true("目标：" in outline_export["content"] and "阻碍：" in outline_export["content"] and "结果：" in outline_export["content"], "outline export scene objective fields")
 assert_true("篇幅规划" in outline_export["content"] and "预计时长" in outline_export["content"], "outline export runtime plan")
 assert_true("来源覆盖" in outline_export["content"] and "已覆盖" in outline_export["content"], "outline export source coverage")
+assert_true("修订任务" in outline_export["content"] and "动作：" in outline_export["content"], "outline export revision tasks")
 
 yaml_export = export_screenplay(sample_result["script"], "yaml", sample_result["yaml"])
 assert_true(yaml_export["content"] == sample_result["yaml"], "yaml export preserves generated yaml")
 assert_true("runtime_plan:" in yaml_export["content"], "yaml export runtime plan")
 assert_true("source_coverage:" in yaml_export["content"], "yaml export source coverage")
+assert_true("revision_tasks:" in yaml_export["content"], "yaml export revision tasks")
 assert_true(sanitize_filename("坏/文件 名?") == "坏_文件_名", "sanitize filename")
 
 sample_analysis = analyze_novel_input({"text": sample_text, "characters": "林澈，沈雾，周栩"})

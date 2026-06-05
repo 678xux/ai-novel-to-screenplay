@@ -232,7 +232,8 @@ function setQuality(quality) {
     ["对白节拍", quality.metrics.dialogue_beat_count],
     ["预计时长", `${quality.metrics.estimated_runtime_minutes || 0} 分钟`],
     ["场均时长", `${quality.metrics.average_scene_minutes || 0} 分钟`],
-    ["章节覆盖", `${quality.metrics.source_coverage_rate || 0}%`]
+    ["章节覆盖", `${quality.metrics.source_coverage_rate || 0}%`],
+    ["修订任务", quality.metrics.revision_task_count || 0]
   ]
     .map(([label, value]) => `<div><span>${label}</span><strong>${value}</strong></div>`)
     .join("");
@@ -358,6 +359,28 @@ function renderOutline(script) {
         ${runtimePlan.pacing ? `<p class="outline-text">${escapeHtml(runtimePlan.pacing)}</p>` : ""}
       </section>`
     : "";
+  const revisionTasks = productionNotes.revision_tasks || [];
+  const taskSection = revisionTasks.length
+    ? `<section class="outline-section">
+        <h3 class="outline-title">修订任务</h3>
+        <div class="character-list">
+          ${revisionTasks.map((task) => `
+            <div class="character-card">
+              <div class="character-head">
+                <strong>${escapeHtml(task.title || task.id || "未命名任务")}</strong>
+                <span>${escapeHtml(task.priority || "medium")}</span>
+              </div>
+              <div class="outline-meta">
+                <span class="outline-chip">${escapeHtml(task.category || "general")}</span>
+                ${task.status ? `<span class="outline-chip">${escapeHtml(task.status)}</span>` : ""}
+                ${(task.target_scene_ids || []).map((sceneId) => `<span class="outline-chip">${escapeHtml(sceneId)}</span>`).join("")}
+              </div>
+              ${task.reason ? `<p class="outline-text">${escapeHtml(task.reason)}</p>` : ""}
+              ${task.action ? `<p class="outline-text">${escapeHtml(task.action)}</p>` : ""}
+            </div>`).join("")}
+        </div>
+      </section>`
+    : "";
 
   outlineOutput.innerHTML = `
     <section class="outline-section">
@@ -368,6 +391,7 @@ function renderOutline(script) {
       </div>
     </section>
     ${coverageSection}
+    ${taskSection}
     ${runtimeSection}
     ${characters}
     ${acts || '<div class="outline-empty">暂无幕和场景。</div>'}
