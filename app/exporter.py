@@ -106,6 +106,28 @@ def render_markdown_outline(script: dict[str, Any]) -> str:
             lines.append("")
 
     production_notes = script.get("production_notes") or {}
+    source_coverage = production_notes.get("source_coverage") or []
+    if source_coverage:
+        lines.append("## 来源覆盖")
+        for item in source_coverage:
+            status = "已覆盖" if item.get("covered") else "需检查"
+            scene_ids = "、".join(str(scene_id) for scene_id in item.get("scene_ids", [])) or "暂无场景"
+            detail = (
+                f"{item.get('chapter') or '未命名章节'}：{status}，"
+                f"{item.get('scene_count', 0)} 场 / {item.get('beat_count', 0)} 节拍，场景：{scene_ids}"
+            )
+            lines.append(_list_line(detail))
+            extras = []
+            if item.get("character_names"):
+                extras.append(f"角色：{'、'.join(str(name) for name in item['character_names'])}")
+            if item.get("props"):
+                extras.append(f"道具/线索：{'、'.join(str(prop) for prop in item['props'])}")
+            if item.get("coverage_note"):
+                extras.append(str(item["coverage_note"]))
+            for extra in extras:
+                lines.append(_list_line(extra, 2))
+        lines.append("")
+
     runtime_plan = production_notes.get("runtime_plan") or {}
     if production_notes.get("estimated_runtime_minutes") or runtime_plan:
         lines.append("## 篇幅规划")

@@ -137,6 +137,7 @@ def main() -> None:
         assert_true(converted["stats"]["scenes"] >= 3, "convert scene count")
         assert_true(converted["stats"]["beats"] >= 3, "convert beat count")
         assert_true("runtime_plan:" in converted["yaml"], "yaml runtime plan")
+        assert_true("source_coverage:" in converted["yaml"], "yaml source coverage")
 
         script = converted["script"]
         scenes = [scene for act in script["acts"] for scene in act.get("scenes", [])]
@@ -145,6 +146,9 @@ def main() -> None:
         assert_true(all(scene.get("estimated_runtime_minutes", 0) > 0 for scene in scenes), "scene runtime estimates")
         assert_true(script["production_notes"]["estimated_runtime_minutes"] > 0, "total runtime")
         assert_true(script["production_notes"]["runtime_plan"]["average_scene_minutes"] > 0, "runtime plan average")
+        source_coverage = script["production_notes"]["source_coverage"]
+        assert_true(len(source_coverage) == 3, "source coverage count")
+        assert_true(all(item["covered"] for item in source_coverage), "source coverage covered")
         assert_true(any(check["id"] == "schema_contract" and check["passed"] for check in converted["quality"]["checks"]), "quality schema check")
 
         yaml_export = assert_export(base_url, script, converted["yaml"], "yaml")
@@ -156,7 +160,7 @@ def main() -> None:
 
         outline_export = assert_export(base_url, script, converted["yaml"], "outline_md")
         outline = outline_export["content"]
-        for fragment in ["# E2E runtime sample", "## 篇幅规划", "目标：", "阻碍：", "结果：", "道具/线索"]:
+        for fragment in ["# E2E runtime sample", "## 来源覆盖", "## 篇幅规划", "目标：", "阻碍：", "结果：", "道具/线索"]:
             assert_true(fragment in outline, f"outline contains {fragment}")
 
         bad_convert = post_json(base_url, "/api/convert", {"text": ""}, expected_status=400)

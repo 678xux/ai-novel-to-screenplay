@@ -77,6 +77,19 @@ SCREENPLAY_SCHEMA = {
                 "pacing": "string",
                 "notes": ["string"],
             },
+            "source_coverage": [
+                {
+                    "chapter": "string",
+                    "source_chars": "number",
+                    "scene_ids": ["string"],
+                    "scene_count": "number",
+                    "beat_count": "number",
+                    "character_names": ["string"],
+                    "props": ["string"],
+                    "covered": "boolean",
+                    "coverage_note": "string",
+                }
+            ],
             "adaptation_warnings": ["string"],
             "revision_suggestions": ["string"],
         },
@@ -137,6 +150,11 @@ def _validate_scalar(value: Any, spec: str, path: str) -> list[dict]:
     if core_spec == "number":
         if not isinstance(value, (int, float)) or isinstance(value, bool):
             return [_schema_error(path, f"{path} 必须是 number，当前为 {_type_name(value)}。")]
+        return []
+
+    if core_spec == "boolean":
+        if not isinstance(value, bool):
+            return [_schema_error(path, f"{path} 必须是 boolean，当前为 {_type_name(value)}。")]
         return []
 
     if value != core_spec:

@@ -5,9 +5,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from app.analyzer import analyze_novel_input
 from app.ai_adapter import convert_novel_to_screenplay_optional_ai, get_public_ai_config
-from app.converter import convert_novel_to_screenplay, estimate_scene_runtime_minutes, split_chapters, split_scene_groups
+from app.converter import build_source_coverage, convert_novel_to_screenplay, estimate_scene_runtime_minutes, split_chapters, split_scene_groups
 from app.exporter import export_screenplay, sanitize_filename
 from app.preprocessor import cleanup_novel_text
+from app.quality import build_quality_report
 from app.schema import validate_screenplay_script
 
 
@@ -195,8 +196,30 @@ assert_true(all(scene["estimated_runtime_minutes"] > 0 for scene in sample_scene
 assert_true(all(act["estimated_runtime_minutes"] > 0 for act in sample_result["script"]["acts"]), "fixture act runtime estimates")
 assert_true(sample_result["script"]["production_notes"]["estimated_runtime_minutes"] > 0, "fixture total runtime estimate")
 assert_true(sample_result["script"]["production_notes"]["runtime_plan"]["average_scene_minutes"] > 0, "fixture runtime plan")
+sample_coverage = sample_result["script"]["production_notes"]["source_coverage"]
+assert_true(len(sample_coverage) == 3, "fixture source coverage count")
+assert_true(all(item["covered"] for item in sample_coverage), "fixture source coverage covered")
+assert_true(all(item["scene_count"] >= 1 and item["beat_count"] >= 1 for item in sample_coverage), "fixture source coverage structure")
+assert_true(any(item["character_names"] for item in sample_coverage), "fixture source coverage characters")
 assert_true(sample_result["quality"]["metrics"]["estimated_runtime_minutes"] > 0, "fixture quality runtime metric")
+assert_true(sample_result["quality"]["metrics"]["source_coverage_rate"] == 100, "fixture quality source coverage metric")
 assert_true(validate_screenplay_script(sample_result["script"]) == [], "fixture sample schema validation")
+
+sample_chapters = split_chapters(sample_text)
+partial_coverage = build_source_coverage(sample_chapters, sample_result["script"]["acts"][:2], sample_result["script"]["characters"])
+assert_true(len(partial_coverage) == 3, "partial source coverage still lists all chapters")
+assert_true(not partial_coverage[-1]["covered"], "partial source coverage flags missing chapter")
+partial_script = {
+    **sample_result["script"],
+    "acts": sample_result["script"]["acts"][:2],
+    "production_notes": {
+        **sample_result["script"]["production_notes"],
+        "source_coverage": partial_coverage,
+    },
+}
+partial_quality = build_quality_report(sample_chapters, partial_script, sample_text)
+assert_true(partial_quality["metrics"]["source_coverage_rate"] < 100, "partial quality source coverage metric")
+assert_true(any("第三章" in suggestion for suggestion in partial_quality["suggestions"]), "partial quality source coverage suggestion")
 
 broken_script = {
     **sample_result["script"],
@@ -239,10 +262,12 @@ assert_true("[动作]" in outline_export["content"] or "[对白]" in outline_exp
 assert_true("道具/线索" in outline_export["content"], "outline export props")
 assert_true("目标：" in outline_export["content"] and "阻碍：" in outline_export["content"] and "结果：" in outline_export["content"], "outline export scene objective fields")
 assert_true("篇幅规划" in outline_export["content"] and "预计时长" in outline_export["content"], "outline export runtime plan")
+assert_true("来源覆盖" in outline_export["content"] and "已覆盖" in outline_export["content"], "outline export source coverage")
 
 yaml_export = export_screenplay(sample_result["script"], "yaml", sample_result["yaml"])
 assert_true(yaml_export["content"] == sample_result["yaml"], "yaml export preserves generated yaml")
 assert_true("runtime_plan:" in yaml_export["content"], "yaml export runtime plan")
+assert_true("source_coverage:" in yaml_export["content"], "yaml export source coverage")
 assert_true(sanitize_filename("坏/文件 名?") == "坏_文件_名", "sanitize filename")
 
 sample_analysis = analyze_novel_input({"text": sample_text, "characters": "林澈，沈雾，周栩"})
