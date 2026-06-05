@@ -550,6 +550,64 @@ def build_runtime_plan(acts: list[dict], mode: str, density: str) -> dict:
     }
 
 
+def unique_values(values: list[Any], limit: int = 8) -> list[str]:
+    items: list[str] = []
+    for value in values:
+        text = normalize_text(value)
+        if text and text not in items:
+            items.append(text)
+        if len(items) >= limit:
+            break
+    return items
+
+
+def build_source_coverage(chapters: list[dict], acts: list[dict], characters: list[dict]) -> list[dict]:
+    known_character_names = [character.get("name", "") for character in characters if character.get("name")]
+    scenes_by_chapter: dict[str, list[dict]] = {}
+    fallback_scenes_by_chapter: dict[str, list[dict]] = {}
+
+    for act in acts:
+        source_chapters = unique_values(act.get("source_chapters") or [act.get("title", "")], 20)
+        act_scenes = act.get("scenes") or []
+        for scene in act_scenes:
+            source_chapter = normalize_text(scene.get("source_chapter"))
+            if source_chapter:
+                scenes_by_chapter.setdefault(source_chapter, []).append(scene)
+        for chapter_title in source_chapters:
+            fallback_scenes_by_chapter.setdefault(chapter_title, []).extend(act_scenes)
+
+    coverage = []
+    for chapter in chapters:
+        chapter_title = normalize_text(chapter.get("title")) or "未命名章节"
+        chapter_scenes = scenes_by_chapter.get(chapter_title) or fallback_scenes_by_chapter.get(chapter_title) or []
+        scene_ids = unique_values([scene.get("id", "") for scene in chapter_scenes], 20)
+        props = unique_values([prop for scene in chapter_scenes for prop in scene.get("props", [])], 10)
+        character_names = unique_values(
+            [
+                name
+                for scene in chapter_scenes
+                for name in known_character_names
+                if scene_mentions_character(scene, name)
+            ],
+            10,
+        )
+        beat_count = sum(len(scene.get("beats", [])) for scene in chapter_scenes)
+        coverage.append(
+            {
+                "chapter": chapter_title,
+                "source_chars": compact_text_length(chapter.get("text", "")),
+                "scene_ids": scene_ids,
+                "scene_count": len(chapter_scenes),
+                "beat_count": beat_count,
+                "character_names": character_names,
+                "props": props,
+                "covered": bool(chapter_scenes and beat_count),
+                "coverage_note": "已转换为可编辑场景" if chapter_scenes and beat_count else "未生成可编辑场景，建议检查章节标题或正文长度",
+            }
+        )
+    return coverage
+
+
 def ensure_runtime_plan(script: dict, mode: str = "drama", density: str = "balanced") -> dict:
     acts = script.get("acts") or []
     for act in acts:
@@ -632,6 +690,7 @@ def build_conversion_result(script: dict, chapters: list[dict], raw_text: str, m
     mode = source.get("adaptation_mode") or (meta or {}).get("mode") or "drama"
     density = (meta or {}).get("density") or "balanced"
     ensure_runtime_plan(script, mode, density)
+    script["production_notes"]["source_coverage"] = build_source_coverage(chapters, script.get("acts", []), script.get("characters", []))
     warnings = validate(script)
     script["production_notes"]["adaptation_warnings"] = warnings
     quality = build_quality_report(chapters, script, raw_text)
@@ -682,6 +741,7 @@ def convert_novel_to_screenplay(payload: dict | None = None) -> dict:
         "production_notes": {
             "estimated_runtime_minutes": 0,
             "runtime_plan": build_runtime_plan(acts, mode, density),
+            "source_coverage": [],
             "adaptation_warnings": [],
             "revision_suggestions": mode_revision_suggestions(mode),
         },

@@ -231,7 +231,8 @@ function setQuality(quality) {
     ["平均章长", quality.metrics.average_chapter_chars],
     ["对白节拍", quality.metrics.dialogue_beat_count],
     ["预计时长", `${quality.metrics.estimated_runtime_minutes || 0} 分钟`],
-    ["场均时长", `${quality.metrics.average_scene_minutes || 0} 分钟`]
+    ["场均时长", `${quality.metrics.average_scene_minutes || 0} 分钟`],
+    ["章节覆盖", `${quality.metrics.source_coverage_rate || 0}%`]
   ]
     .map(([label, value]) => `<div><span>${label}</span><strong>${value}</strong></div>`)
     .join("");
@@ -321,6 +322,29 @@ function renderOutline(script) {
     .join("");
 
   const productionNotes = script.production_notes || {};
+  const sourceCoverage = productionNotes.source_coverage || [];
+  const coverageSection = sourceCoverage.length
+    ? `<section class="outline-section">
+        <h3 class="outline-title">来源覆盖</h3>
+        <div class="character-list">
+          ${sourceCoverage.map((item) => `
+            <div class="character-card">
+              <div class="character-head">
+                <strong>${escapeHtml(item.chapter || "未命名章节")}</strong>
+                <span>${item.covered ? "已覆盖" : "需检查"}</span>
+              </div>
+              <div class="outline-grid">
+                <div class="outline-field"><span>场景</span><strong>${escapeHtml(item.scene_count || 0)} 场</strong></div>
+                <div class="outline-field"><span>节拍</span><strong>${escapeHtml(item.beat_count || 0)} 个</strong></div>
+              </div>
+              <div class="outline-meta">
+                ${(item.scene_ids || []).map((sceneId) => `<span class="outline-chip">${escapeHtml(sceneId)}</span>`).join("")}
+              </div>
+              ${item.coverage_note ? `<p class="outline-text">${escapeHtml(item.coverage_note)}</p>` : ""}
+            </div>`).join("")}
+        </div>
+      </section>`
+    : "";
   const runtimePlan = productionNotes.runtime_plan || {};
   const runtimeSection = productionNotes.estimated_runtime_minutes || runtimePlan.pacing
     ? `<section class="outline-section">
@@ -343,6 +367,7 @@ function renderOutline(script) {
         ${(script.themes || []).map((theme) => `<span class="outline-chip">${escapeHtml(theme)}</span>`).join("")}
       </div>
     </section>
+    ${coverageSection}
     ${runtimeSection}
     ${characters}
     ${acts || '<div class="outline-empty">暂无幕和场景。</div>'}

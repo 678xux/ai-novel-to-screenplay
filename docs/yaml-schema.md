@@ -170,6 +170,19 @@ production_notes:
     pacing: 场景时长较均衡，适合作为剧本初稿继续打磨。
     notes:
       - 根据节拍数量、对白/动作类型和文本体量估算时长，提交前仍需人工朗读校准。
+  source_coverage:
+    - chapter: 第一章 雾港来信
+      source_chars: 4200
+      scene_ids:
+        - scene_01_01
+      scene_count: 1
+      beat_count: 8
+      character_names:
+        - 林澈
+      props:
+        - 匿名信
+      covered: true
+      coverage_note: 已转换为可编辑场景
   adaptation_warnings:
     - 输入章节少于 3 个，不满足比赛题目要求。
   revision_suggestions:
@@ -179,7 +192,7 @@ production_notes:
 
 ### 设计原因
 
-自动转换不应该假装一次完成专业剧本。`production_notes` 明确告诉作者哪些地方需要复核，例如章节数量不足、角色识别不确定、心理描写需要视觉化。`runtime_plan` 进一步把总时长、场均时长、最长场和最短场集中展示，让作者能在改对白之前先判断篇幅和节奏是否适合目标媒介。这样工具更符合“AI 辅助创作”的定位：先给出可用初稿，再引导作者打磨。
+自动转换不应该假装一次完成专业剧本。`production_notes` 明确告诉作者哪些地方需要复核，例如章节数量不足、角色识别不确定、心理描写需要视觉化。`runtime_plan` 进一步把总时长、场均时长、最长场和最短场集中展示，让作者能在改对白之前先判断篇幅和节奏是否适合目标媒介。`source_coverage` 用于检查每个来源章节是否都被转换为可编辑场景，并保留该章对应的场景、节拍、角色和道具线索，适合用户下载多章小说后快速确认没有漏章。这样工具更符合“AI 辅助创作”的定位：先给出可用初稿，再引导作者打磨。
 
 ## 完整示例
 
@@ -251,6 +264,19 @@ script:
       pacing: 场景时长较均衡，适合作为剧本初稿继续打磨。
       notes:
         - 根据节拍数量、对白/动作类型和文本体量估算时长，提交前仍需人工朗读校准。
+    source_coverage:
+      - chapter: 第一章 雾港来信
+        source_chars: 4200
+        scene_ids:
+          - scene_01_01
+        scene_count: 1
+        beat_count: 2
+        character_names:
+          - 林澈
+        props:
+          - 匿名信
+        covered: true
+        coverage_note: 已转换为可编辑场景
     adaptation_warnings: []
     revision_suggestions:
       - 复核角色名与对白归属。

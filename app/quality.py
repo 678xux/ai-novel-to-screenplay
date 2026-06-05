@@ -20,6 +20,7 @@ def validate_screenplay_structure(script: dict) -> list[dict]:
     acts = script.get("acts") or []
     scenes = [scene for act in acts for scene in act.get("scenes", [])]
     production_notes = script.get("production_notes") or {}
+    source_coverage = production_notes.get("source_coverage") or []
     schema_errors = validate_screenplay_script(script)
 
     checks = [
@@ -76,6 +77,13 @@ def validate_screenplay_structure(script: dict) -> list[dict]:
             "info",
             "应提供总时长、场均时长和节奏建议，方便作者判断初稿篇幅。",
         ),
+        make_check(
+            "source_coverage",
+            "章节覆盖",
+            bool(source_coverage) and all(item.get("covered") for item in source_coverage),
+            "warning",
+            "每个来源章节都应至少生成一个带节拍的可编辑场景。",
+        ),
     ]
     return checks
 
@@ -89,6 +97,7 @@ def build_quality_report(chapters: list[dict], script: dict, raw_text: str) -> d
     total_length = text_length(raw_text)
     production_notes = script.get("production_notes") or {}
     runtime_plan = production_notes.get("runtime_plan") or {}
+    source_coverage = production_notes.get("source_coverage") or []
     checks = validate_screenplay_structure(script)
 
     checks.append(
@@ -137,8 +146,14 @@ def build_quality_report(chapters: list[dict], script: dict, raw_text: str) -> d
         suggestions.append("把输出密度切换为“细分”，让长章节拆出更多场景。")
     if runtime_plan.get("pacing"):
         suggestions.append(str(runtime_plan["pacing"]))
+    uncovered_chapters = [item.get("chapter", "") for item in source_coverage if not item.get("covered")]
+    if uncovered_chapters:
+        suggestions.append(f"检查未充分转换的章节：{'、'.join(uncovered_chapters[:5])}。")
 
     average_chapter_chars = round(sum(chapter_lengths) / len(chapter_lengths)) if chapter_lengths else 0
+    coverage_rate = round(
+        len([item for item in source_coverage if item.get("covered")]) / len(source_coverage) * 100
+    ) if source_coverage else 0
     return {
         "score": score,
         "status": "needs_fix" if failed_critical else "review" if failed_warning else "ready",
@@ -151,6 +166,7 @@ def build_quality_report(chapters: list[dict], script: dict, raw_text: str) -> d
             "dialogue_beat_count": len(dialogue_beats),
             "estimated_runtime_minutes": production_notes.get("estimated_runtime_minutes", 0),
             "average_scene_minutes": runtime_plan.get("average_scene_minutes", 0),
+            "source_coverage_rate": coverage_rate,
         },
         "checks": checks,
         "suggestions": suggestions,
