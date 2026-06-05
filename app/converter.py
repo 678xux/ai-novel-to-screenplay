@@ -608,6 +608,185 @@ def build_source_coverage(chapters: list[dict], acts: list[dict], characters: li
     return coverage
 
 
+def revision_priority_rank(priority: str) -> int:
+    return {"high": 0, "medium": 1, "low": 2}.get(priority, 3)
+
+
+def build_revision_tasks(script: dict, mode: str = "drama") -> list[dict]:
+    acts = script.get("acts") or []
+    scenes = [scene for act in acts for scene in act.get("scenes", [])]
+    production_notes = script.get("production_notes") or {}
+    source_coverage = production_notes.get("source_coverage") or []
+    tasks: list[dict] = []
+    seen_keys: set[tuple[str, str]] = set()
+
+    def add_task(priority: str, category: str, title: str, target_scene_ids: list[str], reason: str, action: str) -> None:
+        scene_ids = unique_values(target_scene_ids, 6)
+        key = (category, "|".join(scene_ids) or title)
+        if key in seen_keys:
+            return
+        seen_keys.add(key)
+        tasks.append(
+            {
+                "priority": priority,
+                "category": category,
+                "title": title,
+                "target_scene_ids": scene_ids,
+                "reason": reason,
+                "action": action,
+                "status": "todo",
+            }
+        )
+
+    uncovered = [item.get("chapter", "") for item in source_coverage if not item.get("covered")]
+    if uncovered:
+        add_task(
+            "high",
+            "continuity",
+            "补齐未覆盖章节",
+            [],
+            f"来源覆盖报告显示 {len(uncovered)} 个章节尚未转成带节拍的可编辑场景。",
+            f"优先回看这些章节并补场景：{'、'.join(uncovered[:5])}。",
+        )
+
+    unknown_speaker_scene_ids = []
+    weak_structure_scene_ids = []
+    narration_scene_ids = []
+    no_dialogue_scene_ids = []
+    long_scene_ids = []
+    long_scene_minutes = []
+
+    for scene in scenes:
+        scene_id = scene.get("id", "")
+        beats = scene.get("beats") or []
+        runtime = float(scene.get("estimated_runtime_minutes") or 0)
+        has_dialogue = any(beat.get("type") == "dialogue" for beat in beats)
+        has_narration = any(beat.get("type") == "narration" for beat in beats)
+        has_unknown_speaker = any(beat.get("speaker") == "待定角色" for beat in beats)
+        needs_structure = any(
+            marker in str(scene.get(field, ""))
+            for field in ["objective", "obstacle", "outcome", "turning_point", "conflict"]
+            for marker in ["待编剧确认", "需要人工确认", "需要二次打磨", "阻碍需要编剧"]
+        )
+
+        if has_unknown_speaker:
+            unknown_speaker_scene_ids.append(scene_id)
+        if needs_structure:
+            weak_structure_scene_ids.append(scene_id)
+        if has_narration:
+            narration_scene_ids.append(scene_id)
+        if not has_dialogue:
+            no_dialogue_scene_ids.append(scene_id)
+        if runtime > 3.5:
+            long_scene_ids.append(scene_id)
+            long_scene_minutes.append(runtime)
+
+    if unknown_speaker_scene_ids:
+        add_task(
+            "high",
+            "dialogue",
+            "校准对白归属",
+            unknown_speaker_scene_ids,
+            f"{len(unknown_speaker_scene_ids)} 个场景存在“待定角色”对白。",
+            "回到原文确认说话人，并把 speaker 改为明确角色名。",
+        )
+    if weak_structure_scene_ids:
+        add_task(
+            "high",
+            "structure",
+            "补强场景目标/阻碍/结果",
+            weak_structure_scene_ids,
+            f"{len(weak_structure_scene_ids)} 个场景的目标、阻碍、结果或转折仍带有自动占位。",
+            "逐场写清主角要什么、被什么阻挡、场尾发生了什么变化。",
+        )
+    if narration_scene_ids:
+        add_task(
+            "medium",
+            "visual",
+            "视觉化旁白或心理描写",
+            narration_scene_ids,
+            f"{len(narration_scene_ids)} 个场景包含旁白型节拍。",
+            "把内心、背景或解释性内容改写成动作、道具、环境反应或角色互动。",
+        )
+    if no_dialogue_scene_ids:
+        add_task(
+            "medium",
+            "dialogue",
+            "补充人物对白",
+            no_dialogue_scene_ids,
+            f"{len(no_dialogue_scene_ids)} 个场景暂未形成对白节拍。",
+            "根据场景目标补 1-2 句关键对白，让冲突和人物立场更清楚。",
+        )
+    if long_scene_ids:
+        add_task(
+            "medium",
+            "pacing",
+            "拆分或压缩长场景",
+            long_scene_ids,
+            f"{len(long_scene_ids)} 个场景超过 3.5 分钟，最长约 {max(long_scene_minutes):g} 分钟。",
+            "按地点变化、信息揭示或冲突升级拆成短场，或删减重复铺垫。",
+        )
+
+    for character in script.get("characters") or []:
+        appearances = character.get("appearances") or []
+        if character.get("role") != "主角/核心视角" and len(appearances) <= 1:
+            add_task(
+                "low",
+                "character",
+                "检查配角功能",
+                appearances,
+                f"{character.get('name', '未命名角色')} 出场较少，人物功能可能不够清晰。",
+                "确认该角色是否承担信息揭示、阻碍主角或推动转折的作用。",
+            )
+
+    if mode == "short":
+        hook_scenes = [
+            scene.get("id", "")
+            for scene in scenes
+            if not any(beat.get("hook") and "反转" in str(beat.get("hook")) for beat in scene.get("beats", []))
+        ][:3]
+        if hook_scenes:
+            add_task(
+                "medium",
+                "pacing",
+                "强化短剧追看点",
+                hook_scenes,
+                "短剧模式需要更频繁的钩子和反转。",
+                "检查这些场的结尾，补出悬念、误会、反转或明确的下一集动力。",
+            )
+    elif mode == "stage":
+        add_task(
+            "low",
+            "production",
+            "细化舞台调度",
+            [scene.get("id", "") for scene in scenes[:3]],
+            "舞台剧模式需要把空间变化转成演员走位、灯光和停顿。",
+            "为关键场补上下场、灯光区位和演员停顿说明。",
+        )
+    elif scenes:
+        add_task(
+            "low",
+            "visual",
+            "细化镜头表达",
+            [scene.get("id", "") for scene in scenes[:3]],
+            "影视剧初稿已有镜头提示，但仍需要人工确认画面重点。",
+            "为关键动作补景别、运动方式和可拍摄的视觉细节。",
+        )
+
+    if not tasks and scenes:
+        add_task(
+            "low",
+            "continuity",
+            "复核改编事实线",
+            [scene.get("id", "") for scene in scenes[:3]],
+            "自动初稿已形成结构，但仍需人工核对是否偏离原文事实。",
+            "逐场对照来源章节，确认人物动机、线索顺序和结尾信息没有误读。",
+        )
+
+    sorted_tasks = sorted(tasks, key=lambda item: (revision_priority_rank(item["priority"]), item["category"], item["title"]))[:8]
+    return [{"id": f"task_{index + 1:02d}", **task} for index, task in enumerate(sorted_tasks)]
+
+
 def ensure_runtime_plan(script: dict, mode: str = "drama", density: str = "balanced") -> dict:
     acts = script.get("acts") or []
     for act in acts:
@@ -691,6 +870,7 @@ def build_conversion_result(script: dict, chapters: list[dict], raw_text: str, m
     density = (meta or {}).get("density") or "balanced"
     ensure_runtime_plan(script, mode, density)
     script["production_notes"]["source_coverage"] = build_source_coverage(chapters, script.get("acts", []), script.get("characters", []))
+    script["production_notes"]["revision_tasks"] = build_revision_tasks(script, mode)
     warnings = validate(script)
     script["production_notes"]["adaptation_warnings"] = warnings
     quality = build_quality_report(chapters, script, raw_text)
@@ -742,6 +922,7 @@ def convert_novel_to_screenplay(payload: dict | None = None) -> dict:
             "estimated_runtime_minutes": 0,
             "runtime_plan": build_runtime_plan(acts, mode, density),
             "source_coverage": [],
+            "revision_tasks": [],
             "adaptation_warnings": [],
             "revision_suggestions": mode_revision_suggestions(mode),
         },

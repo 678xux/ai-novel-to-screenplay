@@ -21,6 +21,7 @@ def validate_screenplay_structure(script: dict) -> list[dict]:
     scenes = [scene for act in acts for scene in act.get("scenes", [])]
     production_notes = script.get("production_notes") or {}
     source_coverage = production_notes.get("source_coverage") or []
+    revision_tasks = production_notes.get("revision_tasks") or []
     schema_errors = validate_screenplay_script(script)
 
     checks = [
@@ -84,6 +85,13 @@ def validate_screenplay_structure(script: dict) -> list[dict]:
             "warning",
             "每个来源章节都应至少生成一个带节拍的可编辑场景。",
         ),
+        make_check(
+            "revision_tasks",
+            "修订任务",
+            bool(revision_tasks),
+            "info",
+            "应生成结构化修订任务，帮助作者继续打磨初稿。",
+        ),
     ]
     return checks
 
@@ -98,6 +106,7 @@ def build_quality_report(chapters: list[dict], script: dict, raw_text: str) -> d
     production_notes = script.get("production_notes") or {}
     runtime_plan = production_notes.get("runtime_plan") or {}
     source_coverage = production_notes.get("source_coverage") or []
+    revision_tasks = production_notes.get("revision_tasks") or []
     checks = validate_screenplay_structure(script)
 
     checks.append(
@@ -154,6 +163,7 @@ def build_quality_report(chapters: list[dict], script: dict, raw_text: str) -> d
     coverage_rate = round(
         len([item for item in source_coverage if item.get("covered")]) / len(source_coverage) * 100
     ) if source_coverage else 0
+    high_priority_tasks = len([item for item in revision_tasks if item.get("priority") == "high"])
     return {
         "score": score,
         "status": "needs_fix" if failed_critical else "review" if failed_warning else "ready",
@@ -167,6 +177,8 @@ def build_quality_report(chapters: list[dict], script: dict, raw_text: str) -> d
             "estimated_runtime_minutes": production_notes.get("estimated_runtime_minutes", 0),
             "average_scene_minutes": runtime_plan.get("average_scene_minutes", 0),
             "source_coverage_rate": coverage_rate,
+            "revision_task_count": len(revision_tasks),
+            "high_priority_revision_tasks": high_priority_tasks,
         },
         "checks": checks,
         "suggestions": suggestions,

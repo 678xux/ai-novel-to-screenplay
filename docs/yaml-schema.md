@@ -183,6 +183,16 @@ production_notes:
         - 匿名信
       covered: true
       coverage_note: 已转换为可编辑场景
+  revision_tasks:
+    - id: task_01
+      priority: high
+      category: structure
+      title: 补强场景目标/阻碍/结果
+      target_scene_ids:
+        - scene_01_01
+      reason: 场景目标、阻碍或结果仍带有自动占位。
+      action: 为该场写清主角要什么、被什么阻挡、场尾发生了什么变化。
+      status: todo
   adaptation_warnings:
     - 输入章节少于 3 个，不满足比赛题目要求。
   revision_suggestions:
@@ -192,7 +202,7 @@ production_notes:
 
 ### 设计原因
 
-自动转换不应该假装一次完成专业剧本。`production_notes` 明确告诉作者哪些地方需要复核，例如章节数量不足、角色识别不确定、心理描写需要视觉化。`runtime_plan` 进一步把总时长、场均时长、最长场和最短场集中展示，让作者能在改对白之前先判断篇幅和节奏是否适合目标媒介。`source_coverage` 用于检查每个来源章节是否都被转换为可编辑场景，并保留该章对应的场景、节拍、角色和道具线索，适合用户下载多章小说后快速确认没有漏章。这样工具更符合“AI 辅助创作”的定位：先给出可用初稿，再引导作者打磨。
+自动转换不应该假装一次完成专业剧本。`production_notes` 明确告诉作者哪些地方需要复核，例如章节数量不足、角色识别不确定、心理描写需要视觉化。`runtime_plan` 进一步把总时长、场均时长、最长场和最短场集中展示，让作者能在改对白之前先判断篇幅和节奏是否适合目标媒介。`source_coverage` 用于检查每个来源章节是否都被转换为可编辑场景，并保留该章对应的场景、节拍、角色和道具线索，适合用户下载多章小说后快速确认没有漏章。`revision_tasks` 把笼统建议拆成可执行任务，记录优先级、类别、目标场景、原因和动作建议，使作者能直接按任务继续打磨初稿。这样工具更符合“AI 辅助创作”的定位：先给出可用初稿，再引导作者打磨。
 
 ## 完整示例
 
@@ -277,6 +287,16 @@ script:
           - 匿名信
         covered: true
         coverage_note: 已转换为可编辑场景
+    revision_tasks:
+      - id: task_01
+        priority: high
+        category: structure
+        title: 补强场景目标/阻碍/结果
+        target_scene_ids:
+          - scene_01_01
+        reason: 场景目标、阻碍或结果仍带有自动占位。
+        action: 为该场写清主角要什么、被什么阻挡、场尾发生了什么变化。
+        status: todo
     adaptation_warnings: []
     revision_suggestions:
       - 复核角色名与对白归属。
