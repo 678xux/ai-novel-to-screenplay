@@ -59,6 +59,12 @@ npm test
 npm run e2e
 ```
 
+不打开浏览器时，也可以直接转换本地小说文件：
+
+```bash
+python scripts/convert_file.py examples/three-chapter-novel.txt --title "雾港来信" --characters "林澈，沈雾，周栩" --themes "信任，真相，成长"
+```
+
 ## 使用方式
 
 1. 输入作品名、主要角色、主题和小说正文，或点击“导入”选择一个或多个 TXT/Markdown 文件。
@@ -113,6 +119,20 @@ Schema 定义和设计说明见：
 
 ```text
 docs/yaml-schema.md
+```
+
+## 使用说明与比赛对照
+
+完整使用说明见：
+
+```text
+docs/user-guide.md
+```
+
+比赛要求对照、当前优化点和后续建议见：
+
+```text
+docs/competition-review.md
 ```
 
 ## Demo 视频
