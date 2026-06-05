@@ -115,6 +115,16 @@ Schema 定义和设计说明见：
 docs/yaml-schema.md
 ```
 
+## Demo 视频
+
+- 视频链接：待录制后补充。
+
+正式提交和 demo 录制前，可按以下清单自检：
+
+```text
+docs/submission-checklist.md
+```
+
 ## 当前实现说明
 
 当前版本采用“Python 规则引擎 + 可选 AI adapter”的实现方式：
