@@ -137,8 +137,9 @@ docs/competition-review.md
 
 ## Demo 视频
 
-- 视频链接：待录制后补充。
-- 录制完成后请替换为可直接在线播放的链接，不要使用需要下载或注册网盘账号的地址。
+- 视频链接：[AI 小说转剧本工具 Demo 视频](https://github.com/678xux/ai-novel-to-screenplay/raw/master/docs/demo/ai-novel-to-screenplay-demo.webm)
+- 字幕文件：[docs/demo/demo-subtitles.srt](https://github.com/678xux/ai-novel-to-screenplay/blob/master/docs/demo/demo-subtitles.srt)
+- 演示材料说明：[docs/demo/README.md](https://github.com/678xux/ai-novel-to-screenplay/blob/master/docs/demo/README.md)
 
 正式提交和 demo 录制前，可按以下清单自检：
 

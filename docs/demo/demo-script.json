@@ -1,0 +1,34 @@
+[
+  {
+    "image": "01-home.png",
+    "text": "大家好，这是 AI 小说转剧本工具。它面向通用小说输入，可以把三章以上的小说快速转换成结构化剧本 YAML。"
+  },
+  {
+    "image": "02-sample.png",
+    "text": "左侧支持粘贴正文，也可以导入一个或多个 TXT 和 Markdown 文件。这里使用三章示例小说，方便评委快速复现。"
+  },
+  {
+    "image": "03-analysis.png",
+    "text": "在转换前，可以先清洗下载文本里的广告和网址，再用分析面板检查章节数、字数、段落和对白数量。"
+  },
+  {
+    "image": "04-yaml.png",
+    "text": "点击转换后，工具会自动识别章节、角色、场景、对白、动作节拍、道具线索和场景目标。"
+  },
+  {
+    "image": "04-yaml.png",
+    "text": "右侧 YAML 输出符合项目定义的 Schema，包含 characters、acts、scenes、beats 和 production notes 等结构。"
+  },
+  {
+    "image": "05-outline.png",
+    "text": "切换到大纲视图，可以快速检查来源章节覆盖、修订任务、篇幅规划、人物弧光以及每场的目标、阻碍和结果。"
+  },
+  {
+    "image": "06-export.png",
+    "text": "最后，作者可以导出 YAML、JSON 或 Markdown 大纲继续打磨。无 API Key 时规则引擎可稳定运行，配置后也可以启用 AI 增强。"
+  },
+  {
+    "image": "05-outline.png",
+    "text": "这就是完整演示。代码仓库已公开，README 中包含使用说明、Schema 文档和提交检查清单。"
+  }
+]

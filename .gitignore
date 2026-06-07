@@ -14,3 +14,4 @@ _docx_render/
 # Runtime artifacts.
 *.log
 *.screenplay.yaml
+_demo_work/
